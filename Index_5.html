@@ -1,0 +1,4787 @@
+ <!DOCTYPE html>
+
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SIBDARA — Distribusi Darah</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #dbeef8;
+            --surf: #ffffffee;
+            --surf2: #eef6fc;
+            --surf3: #e0eff8;
+            --bdr: rgba(80, 150, 210, 0.22);
+            --bdr2: rgba(80, 150, 210, 0.14);
+            --red: #C41E3A;
+            --red-glow: rgba(196, 30, 58, 0.28);
+            --gold: #b07d10;
+            --gold-dim: rgba(176, 125, 16, 0.1);
+            --green: #1e8a56;
+            --text: #0f2035;
+            --muted: #5a7a96;
+            --faint: rgba(15, 32, 53, 0.04);
+            --r: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: linear-gradient(160deg, #c8e8f8 0%, #ddf0fb 40%, #cce5f5 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            font-family: 'Jost', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── BLOOD ANIMATION ─────────────────────────────── */
+        #bloodBg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bd {
+            position: absolute;
+            animation: riseBlood linear infinite;
+        }
+
+        @keyframes riseBlood {
+            0% {
+                transform: translateY(110vh) scale(0.6) rotate(0deg);
+                opacity: 0;
+            }
+
+            8% {
+                opacity: 0.07;
+            }
+
+            92% {
+                opacity: 0.07;
+            }
+
+            100% {
+                transform: translateY(-15vh) scale(1.1) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        /* ── LAYOUT ──────────────────────────────────────── */
+        .wrap {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ──────────────────────────────────────── */
+        header {
+            padding: 22px 0;
+            border-bottom: 1px solid var(--bdr);
+            backdrop-filter: blur(14px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(200, 232, 248, 0.88);
+        }
+
+        .h-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #c41e3a 0%, #8a0015 100%);
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 18px rgba(196, 30, 58, 0.35);
+        }
+
+        .brand h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+
+        .brand h1 em {
+            color: var(--red);
+            font-style: normal;
+        }
+
+        .brand p {
+            font-size: 10.5px;
+            color: var(--muted);
+            letter-spacing: 2.2px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ── CARDS ───────────────────────────────────────── */
+        .card {
+            background: var(--surf);
+            border: 1px solid var(--bdr);
+            border-radius: 14px;
+            padding: 28px;
+            margin: 24px 0;
+            box-shadow: 0 4px 24px rgba(60, 120, 180, 0.1);
+        }
+
+        .card-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 19px;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .card-title svg {
+            flex-shrink: 0;
+        }
+
+        /* ── FORM ────────────────────────────────────────── */
+        .fg {
+            display: grid;
+            gap: 14px;
+        }
+
+        .fg-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .fg-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .fg-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .fgroup {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 10.5px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            background: #fff;
+            border: 1px solid var(--bdr2);
+            border-radius: 8px;
+            padding: 10px 13px;
+            color: var(--text);
+            font-family: 'Jost', sans-serif;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+            width: 100%;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: rgba(100, 170, 220, 0.7);
+            box-shadow: 0 0 0 3px rgba(100, 170, 220, 0.12);
+        }
+
+        input[readonly] {
+            background: var(--surf2);
+            opacity: 0.75;
+            cursor: default;
+        }
+
+        select option {
+            background: #fff;
+            color: var(--text);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: opacity(0.5);
+            cursor: pointer;
+        }
+
+        /* ── ITEM ROWS (komponen section) ─────────────────── */
+        #itemsSection {
+            margin-top: 18px;
+        }
+
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .items-label {
+            font-size: 11px;
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* ── NESTED BLOCKS ─────────────────────────────────── */
+        .komp-block {
+            background: var(--surf2);
+            border: 1px solid var(--bdr2);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .block-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .block-header select {
+            flex: 1;
+            height: 36px;
+            padding: 4px 10px;
+            font-size: 14px;
+
+            /* Ukuran tulisan diperbesar */
+            font-weight: 500;
+        }
+
+        .block-header .block-tag {
+            font-size: 10px;
+
+            /* Tag diperbesar sedikit */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--red);
+            white-space: nowrap;
+            min-width: 75px;
+        }
+
+        .block-children {
+            margin-top: 8px;
+            padding-left: 15px;
+            border-left: 2px solid rgba(196, 30, 58, 0.12);
+        }
+
+        .block-add-btn {
+            margin-top: 8px;
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            background: #fff;
+            border: 1px solid var(--bdr2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Jost', sans-serif;
+            transition: all .2s;
+        }
+
+        .block-add-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(196, 30, 58, 0.02);
+        }
+
+        .gol-block {
+            background: #fff;
+            border: 1px solid var(--bdr2);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .gol-block .block-header .block-tag {
+            color: var(--gold);
+        }
+
+        .rh-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            background: var(--surf2);
+            border-radius: 6px;
+        }
+
+        .rh-row select,
+        .rh-row input {
+            flex: 1;
+            height: 34px;
+            padding: 4px 10px;
+            font-size: 13.5px;
+
+            /* Tulisan diperbesar */
+        }
+
+        .rh-row input[type="number"] {
+            max-width: 90px;
+        }
+
+        .rh-tag {
+            font-size: 9.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--green);
+            white-space: nowrap;
+            min-width: 50px;
+        }
+
+        .btn-rm {
+            width: 34px;
+            height: 34px;
+            background: none;
+            border: 1px solid rgba(196, 30, 58, 0.25);
+            border-radius: 6px;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .btn-rm:hover {
+            background: rgba(196, 30, 58, 0.08);
+        }
+
+        /* ── BUTTONS ─────────────────────────────────────── */
+        .btn {
+            padding: 11px 22px;
+            border-radius: 8px;
+            font-family: 'Jost', sans-serif;
+            font-size: 13.5px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all .2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--red), #7a0e1e);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px var(--red-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-outline {
+            background: none;
+            border: 1px solid var(--bdr2);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), #9a7420);
+            color: #07090f;
+            font-weight: 600;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px rgba(212, 168, 67, 0.3);
+        }
+
+        .btn-gold:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 12.5px;
+        }
+
+        .btn-icon {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 11px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--bdr2);
+        }
+
+        /* ── DASHBOARD ───────────────────────────────────── */
+
+        /* ── DASHBOARD TABLE ─────────────────────────────── */
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            border: 1px solid #000;
+        }
+
+        .dash-table th,
+        .dash-table td {
+            border: 1px solid #000;
+            padding: 8px 12px;
+            color: #000;
+        }
+
+        .dt-head th:nth-child(1) {
+            background: #b0d8c0;
+        }
+
+        /* Greenish header */
+        .dt-head th:nth-child(2),
+        .dt-head th:nth-child(3) {
+            background: #b4d0e6;
+        }
+
+        /* Bluish headers */
+        .dt-row td {
+            background: #f8c8c5;
+
+            /* Pinkish rows */
+        }
+
+        .dt-sub td {
+            background: #b4d4a8;
+
+            /* Greenish subtotal */
+            font-weight: 600;
+        }
+
+        .dt-total td {
+            background: #b4d0e6;
+
+            /* Bluish total */
+            font-weight: 600;
+        }
+
+        .dash-empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 30px;
+            font-size: 13px;
+        }
+
+        /* ── TABS ────────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--bdr2);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 22px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: none;
+            font-family: 'Jost', sans-serif;
+            transition: all .2s;
+            letter-spacing: .3px;
+        }
+
+        .tab.active {
+            color: var(--red);
+            border-bottom-color: var(--red);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--text);
+        }
+
+        /* ── DASHBOARD GRID ── */
+        .dash-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .dash-col-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--bdr2);
+            padding-bottom: 8px;
+        }
+
+        /* ── FILTER BOX ── */
+        .filter-box {
+            background: #fff;
+            border: 1px solid var(--bdr);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 15px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ── DASHBOARD TABS ── */
+        .dash-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 4px;
+            background: var(--faint);
+            border-radius: 10px;
+            width: fit-content;
+        }
+
+        .dash-tab {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            cursor: pointer;
+            border: none;
+            border-radius: 7px;
+            background: none;
+            font-family: 'Jost', sans-serif;
+            transition: all .2s;
+        }
+
+        .dash-tab.active {
+            background: #fff;
+            color: var(--red);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ── FILTER BOX ── */
+        .filter-box {
+            background: var(--surf2);
+            border: 1px solid var(--bdr2);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .filter-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .month-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: background .2s;
+        }
+
+        .month-item:hover {
+            background: rgba(80, 150, 210, 0.08);
+        }
+
+        /* ── SEARCH BAR ──────────────────────────────────── */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--surf2);
+            border-bottom: 1px solid var(--bdr2);
+            align-items: center;
+        }
+
+        .search-bar .fgroup {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .search-bar input,
+        .search-bar select {
+            height: 38px;
+            padding: 0 12px;
+            font-size: 13.5px;
+            background: #fff;
+        }
+
+        .search-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-right: 5px;
+        }
+
+        .month-item input {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        /* ── TABLE ───────────────────────────────────────── */
+        .tbl-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--bdr2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        th {
+            background: var(--surf3);
+            color: var(--muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 11px 13px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 13px;
+            border-bottom: 1px solid rgba(80, 150, 210, 0.07);
+            color: var(--text);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: rgba(80, 150, 210, 0.05);
+        }
+
+        tbody tr.sel td {
+            background: rgba(196, 30, 58, 0.04);
+        }
+
+        .tb-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--red);
+            cursor: pointer;
+        }
+
+        /* ── BADGES ──────────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .b-drop {
+            background: rgba(196, 30, 58, 0.1);
+            color: #9a0020;
+        }
+
+        .b-non {
+            background: rgba(40, 100, 200, 0.1);
+            color: #1a4a96;
+        }
+
+        .b-perm {
+            background: rgba(196, 30, 58, 0.08);
+            color: #b01030;
+        }
+
+        .b-pemen {
+            background: rgba(30, 138, 86, 0.1);
+            color: #0e5c38;
+        }
+
+        /* ── TABLE TOP BAR ───────────────────────────────── */
+        .tbl-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tbl-info {
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        /* ── MODAL ───────────────────────────────────────── */
+        #modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 60, 0.4);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #fff;
+            border: 1px solid var(--bdr);
+            border-radius: 14px;
+            padding: 28px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(10, 30, 60, 0.15);
+        }
+
+        .modal-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        /* ── PASSWORD MODAL ──────────────────────────────── */
+        #pwdModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 60, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 11000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #pwdModal.show {
+            display: flex;
+        }
+
+        .pwd-box {
+            background: #fff;
+            border-radius: 18px;
+            padding: 32px;
+            width: 330px;
+            text-align: center;
+            box-shadow: 0 25px 70px rgba(10, 30, 60, 0.25);
+            border: 1px solid var(--bdr);
+            animation: pwdPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pwdPop {
+            from {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .pwd-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+            color: #C41E3A;
+            margin-bottom: 20px;
+            font-size: 19px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .pwd-field {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .pwd-field input {
+            width: 100%;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 12px 45px 12px 12px;
+            border: 1.5px solid var(--bdr);
+            border-radius: 10px;
+            font-family: 'Jost', sans-serif;
+            background: var(--faint);
+            transition: border-color 0.2s;
+        }
+
+        .pwd-field input:focus {
+            outline: none;
+            border-color: #C41E3A;
+            background: #fff;
+        }
+
+        .pwd-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #5a7a96;
+            display: flex;
+            transition: color 0.2s;
+        }
+
+        .pwd-toggle:hover {
+            color: #C41E3A;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--bdr2);
+        }
+
+        /* ── ALERT ───────────────────────────────────────── */
+        #alert {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 9999;
+            padding: 13px 18px;
+            border-radius: 9px;
+            font-size: 13px;
+            min-width: 250px;
+            max-width: 360px;
+            display: none;
+            animation: slideIn .3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .al-ok {
+            background: #e8f8f0;
+            border: 1px solid rgba(30, 138, 86, 0.3);
+            color: #1e6645;
+        }
+
+        .al-err {
+            background: #fde8ec;
+            border: 1px solid rgba(196, 30, 58, 0.3);
+            color: #8a0020;
+        }
+
+        /* ── SPINNER ─────────────────────────────────────── */
+        .spin {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: rot .55s linear infinite;
+        }
+
+        @keyframes rot {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* ── EMPTY STATE ─────────────────────────────────── */
+        .empty {
+            text-align: center;
+            padding: 44px 20px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .empty svg {
+            margin-bottom: 12px;
+            opacity: .3;
+        }
+
+        /* ══════════════════════════════════════════════════
+           RESPONSIVE — TABLET (≤1024px)
+           ══════════════════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .dash-columns {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           RESPONSIVE — SMALL TABLET / LARGE PHONE (≤768px)
+           ══════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+
+            .fg-4,
+            .fg-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .fg-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .item-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .item-row .btn-rm {
+                grid-column: 2;
+                justify-self: end;
+            }
+
+            /* Header stacking */
+            .h-inner {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            #dashBtn {
+                width: 100%;
+                justify-content: center !important;
+                padding: 10px 16px !important;
+                font-size: 12px !important;
+            }
+
+            .brand p {
+                font-size: 9px;
+                letter-spacing: 1.5px;
+            }
+
+            /* Card padding */
+            .card {
+                padding: 18px 14px;
+                margin: 16px 0;
+            }
+
+            /* Search bar stacking */
+            .search-bar {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .search-bar > div {
+                flex-direction: column !important;
+                width: 100%;
+                gap: 10px !important;
+            }
+
+            .search-bar .fgroup {
+                max-width: 100% !important;
+                width: 100%;
+            }
+
+            /* Tabs scroll horizontal */
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab {
+                white-space: nowrap;
+                padding: 10px 16px;
+                font-size: 12.5px;
+            }
+
+            /* Table bar stacking */
+            .tbl-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .tbl-bar > div {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            /* Touch-friendly table cells */
+            th {
+                padding: 9px 10px;
+                font-size: 9px;
+                letter-spacing: 1px;
+            }
+
+            td {
+                padding: 9px 10px;
+                font-size: 12px;
+            }
+
+            /* Touch-friendly buttons */
+            .btn {
+                min-height: 40px;
+                font-size: 12.5px;
+            }
+
+            .btn-sm {
+                min-height: 36px;
+                padding: 7px 12px;
+            }
+
+            /* Dash tabs scroll */
+            .dash-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                scrollbar-width: none;
+            }
+
+            .dash-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            /* Dash column title stacking */
+            .dash-col-title {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .dash-col-title > div {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            /* Modal responsive */
+            .modal-box {
+                padding: 20px 16px;
+                max-width: 95vw;
+                max-height: 90vh;
+            }
+
+            .pwd-box {
+                width: 90vw;
+                max-width: 330px;
+                padding: 24px 20px;
+            }
+
+            /* Filter box */
+            .month-grid {
+                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            }
+
+            /* Komp/Gol block responsive */
+            .komp-block {
+                max-width: 100%;
+                padding: 10px 12px;
+            }
+
+            .block-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .rh-row {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 10px;
+            }
+
+            .rh-row input[type="number"] {
+                max-width: 100%;
+            }
+
+            /* Items header */
+            .items-header {
+                max-width: 100%;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            /* Form actions */
+            .form-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           RESPONSIVE — PHONE PORTRAIT (≤480px)
+           ══════════════════════════════════════════════════ */
+        @media (max-width: 480px) {
+
+            .fg-4,
+            .fg-3,
+            .fg-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .wrap {
+                padding: 0 10px;
+            }
+
+            /* Header compact */
+            header {
+                padding: 14px 0;
+            }
+
+            .logo {
+                width: 38px;
+                height: 38px;
+                border-radius: 9px;
+            }
+
+            .logo svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .brand h1 {
+                font-size: 21px;
+            }
+
+            .brand p {
+                font-size: 8.5px;
+                letter-spacing: 1.2px;
+            }
+
+            /* Card even tighter */
+            .card {
+                padding: 14px 10px;
+                margin: 12px 0;
+                border-radius: 10px;
+            }
+
+            .card-title {
+                font-size: 16px;
+                margin-bottom: 16px;
+            }
+
+            /* Touch-friendly inputs */
+            input, select {
+                font-size: 16px; /* Prevents iOS zoom on focus */
+                padding: 11px 12px;
+                min-height: 44px; /* Apple HIG touch target */
+            }
+
+            label {
+                font-size: 10px;
+                letter-spacing: 1.5px;
+            }
+
+            /* Search bar even more compact */
+            .search-bar {
+                padding: 10px;
+            }
+
+            /* Buttons full width */
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            #moveBtn {
+                font-size: 11.5px;
+            }
+
+            /* Login screen */
+            .login-box-main {
+                width: 90vw;
+                max-width: 320px;
+                padding: 28px 24px;
+            }
+
+            .login-box-main h2 {
+                font-size: 22px !important;
+            }
+
+            /* Table font size */
+            td {
+                font-size: 11.5px;
+                padding: 8px 8px;
+            }
+
+            th {
+                font-size: 8.5px;
+                padding: 8px 8px;
+            }
+
+            /* Dashboard table compact */
+            .dash-table {
+                font-size: 11.5px;
+            }
+
+            .dash-table th,
+            .dash-table td {
+                padding: 6px 8px;
+            }
+
+            /* Pagination */
+            .pagination {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            /* Block header tag */
+            .block-header .block-tag {
+                font-size: 9px;
+                min-width: 60px;
+            }
+
+            .rh-tag {
+                font-size: 8.5px;
+                min-width: 40px;
+            }
+
+            /* Alert toast */
+            #alert {
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                min-width: auto;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           RESPONSIVE — PHONE LANDSCAPE (short height, wide)
+           ══════════════════════════════════════════════════ */
+        @media (max-height: 500px) and (orientation: landscape) {
+
+            /* Reduce sticky header to save vertical space */
+            header {
+                padding: 8px 0;
+                position: sticky;
+            }
+
+            .logo {
+                width: 34px;
+                height: 34px;
+            }
+
+            .brand h1 {
+                font-size: 20px;
+            }
+
+            .brand p {
+                display: none;
+            }
+
+            #dashBtn {
+                padding: 7px 14px !important;
+                font-size: 11px !important;
+            }
+
+            /* Use 2-col grid even on small landscape screens */
+            .fg-4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .fg-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .fg-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* Card compact */
+            .card {
+                padding: 14px 16px;
+                margin: 10px 0;
+            }
+
+            .card-title {
+                font-size: 16px;
+                margin-bottom: 14px;
+            }
+
+            /* Search bar horizontal in landscape */
+            .search-bar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .search-bar > div {
+                flex-direction: row !important;
+            }
+
+            /* Modal in landscape */
+            .modal-box {
+                max-height: 90vh;
+                max-width: 80vw;
+            }
+
+            .pwd-box {
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+
+            /* Login screen landscape */
+            .main-login-overlay {
+                flex-direction: row;
+                gap: 30px;
+            }
+
+            .blood-bag-container {
+                margin-bottom: 0;
+                transform: scale(0.7);
+            }
+
+            .login-box-main {
+                width: 300px;
+                padding: 24px 28px;
+            }
+
+            /* Reduce vertical spacing */
+            .form-actions {
+                margin-top: 14px;
+                padding-top: 12px;
+            }
+
+            .fgroup {
+                gap: 4px;
+            }
+
+            input, select {
+                padding: 8px 10px;
+                min-height: 38px;
+            }
+
+            /* Dash columns side by side in landscape */
+            .dash-columns {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           RESPONSIVE — WIDE LANDSCAPE PHONE (≤900px wide, short)
+           ══════════════════════════════════════════════════ */
+        @media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+
+            .wrap {
+                padding: 0 16px;
+            }
+
+            /* Tabs compact */
+            .tab {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+
+            .dash-tab {
+                padding: 6px 14px;
+                font-size: 12px;
+            }
+
+            /* Table compact but readable */
+            td {
+                font-size: 12px;
+                padding: 7px 8px;
+            }
+
+            th {
+                font-size: 9px;
+                padding: 7px 8px;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           SAFE AREA INSETS (notched phones)
+           ══════════════════════════════════════════════════ */
+        @supports (padding: env(safe-area-inset-top)) {
+            header {
+                padding-top: max(14px, env(safe-area-inset-top));
+            }
+
+            .wrap {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+            }
+
+            #alert {
+                top: max(18px, env(safe-area-inset-top));
+            }
+        }
+
+        /* ── MAIN LOGIN SCREEN ── */
+        .main-login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: linear-gradient(135deg, #c8e8f8 0%, #ddf0fb 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .blood-bag-container {
+            position: relative;
+            width: 90px;
+            height: 160px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bag-top {
+            width: 30px;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px solid rgba(150, 150, 150, 0.5);
+            border-radius: 5px 5px 0 0;
+            border-bottom: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .bag-top::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            border: 2px solid rgba(150, 150, 150, 0.5);
+        }
+
+        .bag-body {
+            width: 90px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(150, 150, 150, 0.5);
+            border-radius: 12px 12px 25px 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(196, 30, 58, 0.2);
+            z-index: 1;
+        }
+
+        .blood-liquid {
+            position: absolute;
+            bottom: -120px;
+            left: -55px;
+            width: 200px;
+            height: 200px;
+            background: #C41E3A;
+            border-radius: 40%;
+            animation: waveLiquid 4s infinite linear;
+            box-shadow: inset 0 0 20px #8a0015;
+        }
+
+        .bag-tube {
+            width: 8px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.5);
+            border-left: 3px solid rgba(150, 150, 150, 0.5);
+            border-right: 3px solid rgba(150, 150, 150, 0.5);
+            z-index: 0;
+        }
+
+        @keyframes waveLiquid {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .login-box-main {
+            background: #fff;
+            padding: 35px 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            width: 330px;
+            text-align: center;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- ── MAIN LOGIN SCREEN ── -->
+    <div id="mainLoginScreen" class="main-login-overlay">
+        <div class="blood-bag-container">
+            <div class="bag-top"></div>
+            <div class="bag-body">
+                <div class="blood-liquid"></div>
+            </div>
+            <div class="bag-tube"></div>
+        </div>
+        <div class="login-box-main">
+            <h2 style="font-family:'Cormorant Garamond', serif; color: #C41E3A; margin-bottom:5px; font-size:26px;">
+                SIBDARA</h2>
+            <p
+                style="font-size:12px; color:#5a7a96; margin-bottom: 25px; letter-spacing:1px; text-transform:uppercase;">
+                Sistem Distribusi Darah</p>
+            <input type="text" id="mainLoginUser" placeholder="Username"
+                style="margin-bottom: 15px; text-align: center; font-weight:600; width:100%;"
+                onkeypress="if(event.key==='Enter') document.getElementById('mainLoginPass').focus()">
+            <div style="position:relative; margin-bottom: 25px;">
+                <input type="password" id="mainLoginPass" placeholder="Password"
+                    style="text-align:center; font-weight:600; width:100%; padding-right:40px; padding-left:40px;"
+                    onkeypress="if(event.key==='Enter') checkMainLogin()">
+                <span onclick="toggleMainPwd()"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#5a7a96; display:flex;"
+                    id="mainPwdToggleIcon" title="Tampilkan Password">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; font-size:15px; padding: 12px;"
+                onclick="checkMainLogin()">Masuk</button>
+            <div id="mainLoginError"
+                style="color: #C41E3A; font-size: 13px; margin-top: 15px; font-weight:600; display: none;">Username atau
+                password salah!</div>
+        </div>
+    </div>
+
+    <!-- ── BLOOD ANIMATION BACKGROUND ── -->
+    <div id="bloodBg"></div>
+
+    <!-- ── TOAST ALERT ── -->
+    <div id="alert"></div>
+
+    <!-- ── EDIT MODAL ── -->
+    <div id="modal">
+        <div class="modal-box">
+            <div class="modal-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg> Edit Data</div>
+            <div id="modalBody"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline btn-sm" onclick="closeModal()">Batal</button>
+                <button class="btn btn-primary btn-sm" id="modalSaveBtn" onclick="saveEdit()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PASSWORD PROMPT MODAL ── -->
+    <div id="pwdModal">
+        <div class="pwd-box">
+            <div class="pwd-title">Otorisasi Diperlukan</div>
+            <div class="pwd-field">
+                <input type="password" id="pwdInput" placeholder="Password"
+                    onkeypress="if(event.key==='Enter') confirmMoveAction()">
+                <span class="pwd-toggle" id="pwdToggleIcon" onclick="togglePwd()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:center;">
+                <button class="btn btn-outline btn-sm" style="flex:1;" onclick="closePwdModal()">Batal</button>
+                <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center;"
+                    onclick="confirmMoveAction()">Verifikasi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+
+        <!-- ── HEADER ── -->
+        <header>
+            <div class="h-inner" style="justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div class="logo">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+                            <path d="M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z" />
+                            <ellipse cx="9.5" cy="16" rx="1.5" ry="2" fill="rgba(255,255,255,0.3)" />
+                        </svg>
+                    </div>
+                    <div class="brand">
+                        <h1>SIB<em>DARA</em></h1>
+                        <p>Sistem Informasi Distribusi Darah · UTD PMI Banda Aceh</p>
+                    </div>
+                </div>
+                <button id="dashBtn" onclick="openAnalyticsDashboard()"
+                    style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#C41E3A 0%,#8a0015 100%);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-family:'Jost',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 18px rgba(196,30,58,0.35);transition:all 0.3s ease;">
+                    <svg id="dashBtnBlood" width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z" />
+                        <ellipse cx="9.5" cy="16" rx="1.5" ry="2" fill="rgba(255,255,255,0.4)" />
+                    </svg>
+                    DASHBOARD
+                </button>
+            </div>
+        </header>
+
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- ── FORM INPUT ── -->
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--red)">
+                    <path d="M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z" />
+                </svg>
+                Form Input Distribusi Darah
+            </div>
+            <form id="mainForm" onsubmit="submitForm(event)">
+
+                <!-- Row 1 -->
+                <div class="fg fg-4">
+                    <div class="fgroup">
+                        <label>Jenis Permintaan</label>
+                        <select id="jenisPermintaan" required>
+                            <option value="">&mdash; Pilih Jenis &mdash;</option>
+                            <option value="Droping">Droping</option>
+                            <option value="Non Droping">Non Droping</option>
+                        </select>
+                    </div>
+                    <div class="fgroup">
+                        <label>Tanggal Droping</label>
+                        <input type="date" id="tanggalDroping" required onchange="onDateChange()">
+                    </div>
+                    <div class="fgroup">
+                        <label>Bulan</label>
+                        <input type="text" id="bulan" readonly placeholder="Otomatis">
+                    </div>
+                    <div class="fgroup">
+                        <label>Tahun</label>
+                        <input type="text" id="tahun" readonly placeholder="Otomatis">
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="fg fg-2" style="margin-top:14px;">
+                    <div class="fgroup">
+                        <label>RS / Klinik Tujuan</label>
+                        <select id="rsKlinik" required onchange="onRSChange()">
+                            <option value="">&mdash; Pilih RS / Klinik &mdash;</option>
+                            <optgroup label="🔵 DROPING">
+                                <option value="ITD ZA|droping">ITD ZA</option>
+                                <option value="MEURAXA|droping">MEURAXA</option>
+                                <option value="RSIA|droping">RSIA</option>
+                                <option value="RS Teuku Umar Calang|droping">RS Teuku Umar Calang</option>
+                                <option value="UDD Kota Langsa|droping">UDD Kota Langsa</option>
+                                <option value="UDD Kab. Tangerang|droping">UDD Kab. Tangerang</option>
+                                <option value="UDD Kab. Pidie|droping">UDD Kab. Pidie</option>
+                                <option value="UDD Kab. Aceh Utara|droping">UDD Kab. Aceh Utara</option>
+                                <option value="UDD. Kota Medan|droping">UDD. Kota Medan</option>
+                            </optgroup>
+                            <optgroup label="🟡 NON DROPING">
+                                <option value="RS. HARAPAN BUNDA|non-droping">RS. HARAPAN BUNDA</option>
+                                <option value="RS. TEUKU FAKINAH|non-droping">RS. TEUKU FAKINAH</option>
+                                <option value="RS. PERTAMEDIKA|non-droping">RS. PERTAMEDIKA</option>
+                                <option value="RS. KESDAM IM|non-droping">RS. KESDAM IM</option>
+                                <option value="RS. BHAYANGKARA|non-droping">RS. BHAYANGKARA</option>
+                                <option value="RS. CEMPAKA AZ-ZAHRA|non-droping">RS. CEMPAKA AZ-ZAHRA</option>
+                                <option value="MEUTIA HOSPITAL|non-droping">MEUTIA HOSPITAL</option>
+                                <option value="RS. IBNU SINA|non-droping">RS. IBNU SINA</option>
+                                <option value="RS. PENDIDIKAN USK|non-droping">RS. PENDIDIKAN USK</option>
+                                <option value="RS. KABUPATEN ACEH BESAR|non-droping">RS. KABUPATEN ACEH BESAR</option>
+                                <option value="KLINIK KASEHAT WALAFIAT|non-droping">KLINIK KASEHAT WALAFIAT</option>
+                                <option value="NEW PUTRO PHANG|non-droping">NEW PUTRO PHANG</option>
+                                <option value="KLINIK NADIRAH|non-droping">KLINIK NADIRAH</option>
+                                <option value="KLINIK BUNGONG SEULANGA|non-droping">KLINIK BUNGONG SEULANGA</option>
+                                <option value="RS. JIWA ACEH|non-droping">RS. JIWA ACEH</option>
+                                <option value="RS. HERMINA|non-droping">RS. HERMINA</option>
+                                <option value="RS. CEMPAKA LIMA|non-droping">RS. CEMPAKA LIMA</option>
+                                <option value="KLINIK UTAMA REZEKI MERASI|non-droping">KLINIK UTAMA REZEKI MERASI
+                                </option>
+                                <option value="RSU PUTRI BIDADARI|non-droping">RSU PUTRI BIDADARI</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="fgroup">
+                        <label>Jenis Pengimputan</label>
+                        <select id="jenisPengimputan" required>
+                            <option value="">&mdash; Pilih Jenis &mdash;</option>
+                            <option value="Permintaan">Permintaan</option>
+                            <option value="Pemenuhan">Pemenuhan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ITEM ROWS (komponen darah) -->
+                <div id="itemsSection" style="display:none;">
+                    <div class="items-header" style="margin-top:20px;">
+                        <span class="items-label">🩸 Detail Komponen Darah</span>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addKomponen()">+ Tambah
+                            Komponen</button>
+                    </div>
+                    <div id="itemsList"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="resetForm()">Reset</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2">
+                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Simpan ke NAMA UNTUK SIMPAN DATA YANG DIINPUT LEWAT APLIKASI
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- ── DASHBOARD ── -->
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title" style="justify-content:space-between; margin-bottom: 22px;">
+                <span style="display:flex;align-items:center;gap:9px;">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard Monitoring
+                </span>
+                <button class="btn btn-outline btn-sm" onclick="loadAllDashboards()">↻ Refresh All</button>
+            </div>
+            <div class="dash-columns">
+
+                <!-- COLUMN 1: KK SARI -->
+                <div class="dash-column">
+                    <div class="dash-col-title">
+                        <span>🩸 Monitoring DB KK Sari</span>
+                        <button class="btn btn-outline btn-icon btn-sm"
+                            onclick="printDashboard('dashGridKKSari', 'Dashboard Monitoring DB KK Sari')"
+                            title="Download PDF / Print">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" />
+                            </svg>
+                            Print/PDF
+                        </button>
+                    </div>
+                    <div id="dashGridKKSari" class="tbl-wrap">
+                        <div class="dash-empty">Memuat…</div>
+                    </div>
+                </div>
+
+                <!-- COLUMN 2: DISTRIBUSI -->
+                <div class="dash-column">
+                    <div class="dash-col-title">
+                        <span>🩸 Monitoring DB Distribusi</span>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-outline btn-icon btn-sm" onclick="toggleFilter()"
+                                title="Filter Bulan">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                </svg>
+                                Filter
+                            </button>
+                            <button class="btn btn-outline btn-icon btn-sm"
+                                onclick="printDashboard('dashGridDistribusi', 'Dashboard Monitoring DB Distribusi')"
+                                title="Download PDF / Print">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" />
+                                </svg>
+                                Print/PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Month Filter (Collapsible) -->
+                    <div id="distFilterBox" class="filter-box">
+                        <div class="filter-title" style="margin-bottom:10px; font-size:10px;">PILIH BULAN</div>
+                        <div class="month-grid" id="monthFilterGrid"></div>
+                    </div>
+                    <div id="dashGridDistribusi" class="tbl-wrap">
+                        <div class="dash-empty">Memuat…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+
+        <!-- ── DATA TABLES ── -->
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" id="tab-kksari" onclick="switchTab('kksari')">📋 NAMA UNTUK PENGIPUTAN</button>
+                <button class="tab" id="tab-distribusi" onclick="switchTab('distribusi')">📦 NAMA SHEET UNTUK PENYIMPANAN DATA BASE</button>
+            </div>
+
+            <!-- KK SARI TAB -->
+            <div id="pane-kksari">
+
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <div style="display:flex; align-items:center; flex:1; gap:15px;">
+                        <div class="fgroup" style="max-width:180px;">
+                            <span class="search-label">📅 Tanggal:</span>
+                            <input type="date" id="searchKKTgl" oninput="filterKKSari()">
+                        </div>
+                        <div class="fgroup" style="max-width:150px;">
+                            <span class="search-label">📅 Bulan:</span>
+                            <select id="searchKKBulan" onchange="filterKKSari()">
+                                <option value="">Semua Bulan</option>
+                                <option value="Januari">Januari</option>
+                                <option value="Februari">Februari</option>
+                                <option value="Maret">Maret</option>
+                                <option value="April">April</option>
+                                <option value="Mei">Mei</option>
+                                <option value="Juni">Juni</option>
+                                <option value="Juli">Juli</option>
+                                <option value="Agustus">Agustus</option>
+                                <option value="September">September</option>
+                                <option value="Oktober">Oktober</option>
+                                <option value="November">November</option>
+                                <option value="Desember">Desember</option>
+                            </select>
+                        </div>
+                        <div class="fgroup">
+                            <span class="search-label">🏥 RS / Klinik:</span>
+                            <input type="text" id="searchKKRS" placeholder="Cari nama RS..." oninput="filterKKSari()">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="clearKKFilter()">✖ Clear</button>
+                </div>
+                <div class="tbl-bar">
+                    <span class="tbl-info" id="kkInfo">— records</span>
+                    <div style="display:flex;gap:9px;">
+                        <button class="btn btn-outline btn-sm" onclick="loadKKSari()">↻ Refresh</button>
+                        <button class="btn btn-gold btn-sm" id="moveBtn" disabled onclick="moveSelected()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2">
+                                <polyline points="5 12 19 12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                            Pindah ke DB Distribusi
+                        </button>
+                    </div>
+                </div>
+                <div class="tbl-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th>
+                                <th>Jenis Permintaan</th>
+                                <th>Tanggal</th>
+                                <th>RS / Klinik</th>
+                                <th>Komponen</th>
+                                <th>Gol. Darah</th>
+                                <th>Rhesus</th>
+                                <th>Jumlah</th>
+                                <th>Jenis</th>
+                                <th>bulan</th>
+                                <th>tahun</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kkBody">
+                            <tr>
+                                <td colspan="13">
+                                    <div class="empty">Memuat data…</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="kkPagination" style="display:none;">
+                    <button class="btn btn-outline btn-sm" onclick="prevKKPage()" id="kkPrevBtn">Sebelumnya</button>
+                    <span id="kkPageInfo" style="font-size: 13px; color: var(--muted); margin: 0 10px;">Halaman 1</span>
+                    <button class="btn btn-outline btn-sm" onclick="nextKKPage()" id="kkNextBtn">Selanjutnya</button>
+                </div>
+            </div>
+
+            <!-- DISTRIBUSI TAB -->
+            <div id="pane-distribusi" style="display:none;">
+                <!-- Search Bar Distribusi -->
+                <div class="search-bar">
+                    <div style="display:flex; align-items:center; flex:1; gap:15px;">
+                        <div class="fgroup" style="max-width:180px;">
+                            <span class="search-label">📅 Tanggal:</span>
+                            <input type="date" id="searchDistTgl" oninput="filterDistribusi()">
+                        </div>
+                        <div class="fgroup" style="max-width:150px;">
+                            <span class="search-label">📅 Bulan:</span>
+                            <select id="searchDistBulan" onchange="filterDistribusi()">
+                                <option value="">Semua Bulan</option>
+                                <option value="Januari">Januari</option>
+                                <option value="Februari">Februari</option>
+                                <option value="Maret">Maret</option>
+                                <option value="April">April</option>
+                                <option value="Mei">Mei</option>
+                                <option value="Juni">Juni</option>
+                                <option value="Juli">Juli</option>
+                                <option value="Agustus">Agustus</option>
+                                <option value="September">September</option>
+                                <option value="Oktober">Oktober</option>
+                                <option value="November">November</option>
+                                <option value="Desember">Desember</option>
+                            </select>
+                        </div>
+                        <div class="fgroup">
+                            <span class="search-label">🏥 RS / Klinik:</span>
+                            <input type="text" id="searchDistRS" placeholder="Cari RS..." oninput="filterDistribusi()">
+                        </div>
+                        <div class="fgroup">
+                            <span class="search-label">📌 Jenis:</span>
+                            <select id="searchDistJenis" onchange="filterDistribusi()">
+                                <option value="">Semua Jenis</option>
+                                <option value="Permintaan">Permintaan</option>
+                                <option value="Pemenuhan">Pemenuhan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <button class="btn btn-outline btn-sm" onclick="clearDistFilter()">✖ Clear</button>
+                        <span class="tbl-info" id="distInfo"
+                            style="margin-left:10px; font-weight:500; color:var(--primary);">— records</span>
+                    </div>
+                </div>
+
+                <div class="tbl-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Jenis Permintaan</th>
+                                <th>Tanggal</th>
+                                <th>RS / Klinik</th>
+                                <th>Komponen</th>
+                                <th>Gol. Darah</th>
+                                <th>Rhesus</th>
+                                <th>Jumlah</th>
+                                <th>Jenis</th>
+                                <th>bulan</th>
+                                <th>tahun</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="distBody">
+                            <tr>
+                                <td colspan="11">
+                                    <div class="empty">Memuat data…</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="distPagination" style="display:none;">
+                    <button class="btn btn-outline btn-sm" onclick="prevDistPage()" id="distPrevBtn">Sebelumnya</button>
+                    <span id="distPageInfo" style="font-size: 13px; color: var(--muted); margin: 0 10px;">Halaman
+                        1</span>
+                    <button class="btn btn-outline btn-sm" onclick="nextDistPage()"
+                        id="distNextBtn">Selanjutnya</button>
+                </div>
+            </div>
+        </div>
+        <div style="height:40px;"></div>
+    </div>
+    <!-- /.wrap -->
+
+    <script>
+        function toggleMainPwd() {
+            const input = document.getElementById('mainLoginPass');
+            const icon = document.getElementById('mainPwdToggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
+        function checkMainLogin() {
+            const user = document.getElementById('mainLoginUser').value.trim();
+            const pass = document.getElementById('mainLoginPass').value.trim();
+            const err = document.getElementById('mainLoginError');
+            if (user.toLowerCase() === 'admin' && pass === 'useradmin') {
+                const screen = document.getElementById('mainLoginScreen');
+                screen.style.opacity = '0';
+                setTimeout(() => {
+                    screen.style.display = 'none';
+                }, 500);
+            } else {
+                err.style.display = 'block';
+            }
+        }
+        // ─── CONSTANTS ────────────────────────────────────────────────────────────────
+        const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const KOMPONEN = ['WB', 'PRC', 'TC', 'FP', 'FFP', 'AHF', 'LP'];
+        const GOL = ['A', 'B', 'AB', 'O'];
+        const RHESUS = ['Positif', 'Negatif'];
+        let kkData = [];
+        let distData = [];
+        let editId = null;
+        let kkCurrentPage = 1;
+        let distCurrentPage = 1;
+        const ITEMS_PER_PAGE = 20;
+        let currentKKSariFiltered = [];
+        let currentDistFiltered = [];
+        let activeAction = null; // 'move', 'edit', 'delete'
+        let pendingActionData = null;
+
+        // ─── BLOOD ANIMATION ──────────────────────────────────────────────────────────
+        (function createDrops() {
+            const bg = document.getElementById('bloodBg');
+            const shapes = [
+                'M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z',
+                'M8 0 C5 4 0 7 0 11a8 8 0 0016 0C16 7 11 4 8 0z',
+                'M10 1 C7 5 2 9 2 13a8 8 0 0016 0C18 9 13 5 10 1z'
+            ];
+            for (let i = 0; i < 18; i++) {
+                const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const sz = 14 + Math.random() * 26;
+                s.setAttribute('viewBox', '0 0 24 24');
+                s.setAttribute('width', sz); s.setAttribute('height', sz);
+                s.style.cssText = `position:absolute;left:${Math.random() * 100}%;fill:#c41e3a;`;
+                s.style.animationDuration = (14 + Math.random() * 22) + 's';
+                s.style.animationDelay = (Math.random() * 18) + 's';
+                s.classList.add('bd');
+                const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                p.setAttribute('d', shapes[i % 3]);
+                s.appendChild(p); bg.appendChild(s);
+            }
+        })();
+        // ─── DATE CHANGE ──────────────────────────────────────────────────────────────
+        function onDateChange() {
+            const v = document.getElementById('tanggalDroping').value;
+            if (!v) return;
+            const d = new Date(v + 'T00:00:00');
+            document.getElementById('bulan').value = MONTHS[d.getMonth()];
+            document.getElementById('tahun').value = d.getFullYear();
+        }
+        // ─── RS CHANGE ────────────────────────────────────────────────────────────────
+        function onRSChange() {
+            const val = document.getElementById('rsKlinik').value;
+            const sec = document.getElementById('itemsSection');
+            const lst = document.getElementById('itemsList');
+            if (!val) { sec.style.display = 'none'; lst.innerHTML = ''; return; }
+            sec.style.display = 'block';
+            if (lst.children.length === 0) addKomponen();
+        }
+        // ─── CASCADING ADD FUNCTIONS ──────────────────────────────────────────────────
+        function addKomponen() {
+            const lst = document.getElementById('itemsList');
+            const div = document.createElement('div');
+            div.className = 'komp-block';
+            div.innerHTML = `
+<div class="block-header">
+<span class="block-tag">Komponen</span>
+<select name="komponen" required onchange="onKomponenChange(this)">
+<option value="">&mdash; Pilih Komponen &mdash;</option>
+${KOMPONEN.map(k => `<option value="${k}">${k}</option>`).join('')}
+</select>
+<button type="button" class="btn-rm" onclick="removeBlock(this)" title="Hapus Komponen">×</button>
+</div>
+<div class="block-children komp-children" style="display:none;"></div>
+`;
+            lst.appendChild(div);
+        }
+        function onKomponenChange(sel) {
+            const block = sel.closest('.komp-block');
+            const children = block.querySelector('.komp-children');
+            if (!sel.value) {
+                children.style.display = 'none';
+                children.innerHTML = '';
+                return;
+            }
+            children.style.display = 'block';
+            if (children.querySelectorAll('.gol-block').length === 0) {
+                addGolDarah(children);
+            }
+        }
+        function addGolDarah(container) {
+            // Remove existing add-gol button before adding new one
+            const oldBtn = container.querySelector('.add-gol-btn');
+            if (oldBtn) oldBtn.remove();
+            const div = document.createElement('div');
+            div.className = 'gol-block';
+            div.innerHTML = `
+<div class="block-header">
+<span class="block-tag">Gol. Darah</span>
+<select name="golDarah" required onchange="onGolDarahChange(this)">
+<option value="">&mdash; Pilih Gol. Darah &mdash;</option>
+${GOL.map(g => `<option value="${g}">${g}</option>`).join('')}
+</select>
+<button type="button" class="btn-rm" onclick="removeBlock(this)" title="Hapus Gol. Darah">×</button>
+</div>
+<div class="block-children gol-children" style="display:none;"></div>
+`;
+            container.appendChild(div);
+            // Re-add the "+Tambah Gol. Darah" button at the bottom
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'block-add-btn add-gol-btn';
+            addBtn.textContent = '+ Tambah Golongan Darah';
+            addBtn.onclick = function () { addGolDarah(container); };
+            container.appendChild(addBtn);
+        }
+        function onGolDarahChange(sel) {
+            const block = sel.closest('.gol-block');
+            const children = block.querySelector('.gol-children');
+            if (!sel.value) {
+                children.style.display = 'none';
+                children.innerHTML = '';
+                return;
+            }
+            children.style.display = 'block';
+            if (children.querySelectorAll('.rh-row').length === 0) {
+                addRhesus(children);
+            }
+        }
+        function addRhesus(container) {
+            // Remove existing add-rh button
+            const oldBtn = container.querySelector('.add-rh-btn');
+            if (oldBtn) oldBtn.remove();
+            const div = document.createElement('div');
+            div.className = 'rh-row';
+            div.innerHTML = `
+<span class="rh-tag">Rhesus</span>
+<select name="rhesus" required>
+<option value="">&mdash; Rhesus &mdash;</option>
+${RHESUS.map(r => `<option value="${r}">${r}</option>`).join('')}
+</select>
+<input type="number" name="jumlah" min="1" placeholder="Jumlah" required>
+<button type="button" class="btn-rm" onclick="removeBlock(this)" title="Hapus">×</button>
+`;
+            container.appendChild(div);
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'block-add-btn add-rh-btn';
+            addBtn.textContent = '+ Tambah Rhesus';
+            addBtn.onclick = function () { addRhesus(container); };
+            container.appendChild(addBtn);
+        }
+        function removeBlock(btn) {
+            const el = btn.closest('.komp-block, .gol-block, .rh-row');
+            if (el) el.remove();
+        }
+        // ─── FORM SUBMIT ──────────────────────────────────────────────────────────────
+        function submitForm(e) {
+            e.preventDefault();
+            const rsVal = document.getElementById('rsKlinik').value;
+            const [rsKlinik, tipeRS] = rsVal.split('|');
+            const kompBlocks = document.querySelectorAll('#itemsList .komp-block');
+            if (kompBlocks.length === 0) { showAlert('Tambahkan minimal 1 komponen darah.', 'err'); return; }
+            const records = [];
+            let valid = true;
+            kompBlocks.forEach(kb => {
+                const komponen = kb.querySelector('[name=komponen]').value;
+                if (!komponen) { valid = false; return; }
+                const golBlocks = kb.querySelectorAll('.gol-block');
+                if (golBlocks.length === 0) { valid = false; return; }
+                golBlocks.forEach(gb => {
+                    const golDarah = gb.querySelector('[name=golDarah]').value;
+                    if (!golDarah) { valid = false; return; }
+                    const rhRows = gb.querySelectorAll('.rh-row');
+                    if (rhRows.length === 0) { valid = false; return; }
+                    rhRows.forEach(rr => {
+                        const rhesus = rr.querySelector('[name=rhesus]').value;
+                        const jumlah = rr.querySelector('[name=jumlah]').value;
+                        if (!rhesus || !jumlah) { valid = false; return; }
+                        records.push({
+                            jenisPermintaan: document.getElementById('jenisPermintaan').value,
+                            tanggal: document.getElementById('tanggalDroping').value,
+                            rsKlinik: rsKlinik,
+                            komponen: komponen,
+                            golDarah: golDarah,
+                            rhesus: rhesus,
+                            jumlah: parseInt(jumlah),
+                            jenis: document.getElementById('jenisPengimputan').value,
+                            bulan: document.getElementById('bulan').value,
+                            tahun: document.getElementById('tahun').value
+                        });
+                    });
+                });
+            });
+            if (!valid) { showAlert('Lengkapi semua field komponen darah.', 'err'); return; }
+            if (records.length === 0) { showAlert('Tidak ada data untuk disimpan.', 'err'); return; }
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Menyimpan…';
+            google.script.run
+                .withSuccessHandler(r => {
+                    btn.disabled = false; btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan ke DB KK Sari';
+                    if (r.success) { showAlert(r.message, 'ok'); resetForm(); loadAllData(); }
+                    else showAlert('Gagal: ' + r.error, 'err');
+                })
+
+                .withFailureHandler(err => { btn.disabled = false; btn.innerHTML = 'Simpan ke DB KK Sari'; showAlert('Error: ' + err.message, 'err'); })
+                .saveToKKSari(records);
+        }
+        function resetForm() {
+            document.getElementById('mainForm').reset();
+            document.getElementById('itemsList').innerHTML = '';
+            document.getElementById('itemsSection').style.display = 'none';
+        }
+        // ─── TABS ─────────────────────────────────────────────────────────────────────
+        function switchTab(name) {
+            ['kksari', 'distribusi'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('active', t === name);
+                document.getElementById('pane-' + t).style.display = t === name ? 'block' : 'none';
+            });
+        }
+
+        // ─── DATA LOADING ─────────────────────────────────────────────────────────────
+        function loadAllData() {
+            // Show loading state on dashboards
+            document.getElementById('dashGridKKSari').innerHTML = '<div class="dash-empty">Memuat…</div>';
+            document.getElementById('dashGridDistribusi').innerHTML = '<div class="dash-empty">Memuat…</div>';
+
+            let selectedMonths = [];
+            const filterGrid = document.getElementById('monthFilterGrid');
+            if (filterGrid && filterGrid.children.length > 0) {
+                selectedMonths = [...document.querySelectorAll('input[name="fMonth"]:checked')].map(c => c.value);
+            } else {
+                selectedMonths = [MONTHS[new Date().getMonth()]];
+            }
+
+            google.script.run
+                .withSuccessHandler(r => {
+                    if (r.success) {
+                        kkData = r.kkData || [];
+                        distData = r.distData || [];
+                        filterKKSari();
+                        filterDistribusi();
+                        renderDashboard(r.dashKK || {}, 'dashGridKKSari');
+                        renderDashboard(r.dashDist || {}, 'dashGridDistribusi');
+
+                    } else {
+                        showAlert('Gagal memuat data: ' + r.error, 'err');
+                    }
+                })
+                .withFailureHandler(err => showAlert('Error: ' + err.message, 'err'))
+                .getUnifiedData(selectedMonths);
+        }
+
+        function loadKKSari() { loadAllData(); }
+        function loadAllDashboards() { loadAllData(); }
+        function loadDistribusi() { loadAllData(); }
+        function loadKKSariDashboard() { loadAllData(); }
+        function loadDistribusiDashboard() { loadAllData(); }
+
+        function clearDistFilter() {
+            document.getElementById('searchDistTgl').value = '';
+            document.getElementById('searchDistRS').value = '';
+            document.getElementById('searchDistJenis').value = '';
+            document.getElementById('searchDistBulan').value = '';
+            filterDistribusi();
+        }
+
+        function filterDistribusi() {
+            const tgl = document.getElementById('searchDistTgl').value;
+            const rs = document.getElementById('searchDistRS').value.toLowerCase();
+            const jenis = document.getElementById('searchDistJenis').value;
+            const bulan = document.getElementById('searchDistBulan').value;
+            currentDistFiltered = distData.filter(row => {
+                const rowTgl = row[2] ? formatTglISO(row[2]) : '';
+                const rowRS = (row[3] || '').toLowerCase();
+                const rowJenis = row[8] || '';
+                const rowBulan = (row[9] || '');
+                const matchTgl = !tgl || rowTgl === tgl;
+                const matchRS = !rs || rowRS.includes(rs);
+                const matchJenis = !jenis || rowJenis === jenis;
+                const matchBulan = !bulan || rowBulan === bulan;
+                return matchTgl && matchRS && matchJenis && matchBulan;
+            });
+            distCurrentPage = 1;
+            renderDistribusi();
+        }
+
+        function formatTglISO(val) {
+            if (!val) return '';
+            if (val.includes('T')) return val.split('T')[0];
+            return val;
+        }
+
+
+        function clearKKFilter() {
+            document.getElementById('searchKKTgl').value = '';
+            document.getElementById('searchKKRS').value = '';
+            document.getElementById('searchKKBulan').value = '';
+            filterKKSari();
+        }
+        function filterKKSari() {
+            const tgl = document.getElementById('searchKKTgl').value;
+            const rs = document.getElementById('searchKKRS').value.toLowerCase();
+            const bulan = document.getElementById('searchKKBulan').value;
+            currentKKSariFiltered = kkData.filter(row => {
+                // row[2] is Date, row[3] is RS, row[9] is Bulan
+                const rowTgl = row[2] ? new Date(row[2]).toISOString().split('T')[0] : '';
+                const rowRS = (row[3] || '').toLowerCase();
+                const rowBulan = (row[9] || '');
+                const matchTgl = !tgl || rowTgl === tgl;
+                const matchRS = !rs || rowRS.includes(rs);
+                const matchBulan = !bulan || rowBulan === bulan;
+                return matchTgl && matchRS && matchBulan;
+            });
+            kkCurrentPage = 1;
+            if (typeof selectedKKSariIds !== 'undefined') selectedKKSariIds.clear();
+            renderKKSari();
+        }
+        function renderKKSari() {
+            const data = currentKKSariFiltered;
+            const body = document.getElementById('kkBody');
+            document.getElementById('kkInfo').textContent = data.length + ' record';
+            const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE) || 1;
+            if (kkCurrentPage > totalPages) kkCurrentPage = totalPages;
+            if (kkCurrentPage < 1) kkCurrentPage = 1;
+            if (!data.length) {
+                body.innerHTML = '<tr><td colspan="12"><div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><br>Tidak ada data yang cocok</div></td></tr>';
+                document.getElementById('kkPagination').style.display = 'none';
+                return;
+            }
+            const startIndex = (kkCurrentPage - 1) * ITEMS_PER_PAGE;
+            const paginatedData = data.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+            body.innerHTML = paginatedData.map(row => {
+                const rId = row[11].toString();
+                const isChecked = typeof selectedKKSariIds !== 'undefined' && selectedKKSariIds.has(rId);
+                return `
+<tr data-id="${rId}" class="${isChecked ? 'sel' : ''}">
+<td><input type="checkbox" class="row-cb" value="${rId}" onchange="updateMoveBtn(this)" ${isChecked ? 'checked' : ''}></td>
+<td>${esc(row[1])}</td>
+<td>${formatTgl(esc(row[2]))}</td>
+<td style="max-width:180px;white-space:normal;">${esc(row[3])}</td>
+<td><strong>${esc(row[4])}</strong></td>
+<td>${esc(row[5])}</td>
+<td>${esc(row[6])}</td>
+<td style="text-align:right;font-weight:600;">${esc(row[7])}</td>
+<td><span class="badge ${row[8] === 'Permintaan' ? 'b-perm' : 'b-pemen'}">${esc(row[8])}</span></td>
+<td>${esc(row[9])}</td>
+<td>${esc(row[10])}</td>
+<td>
+<div class="tb-actions">
+<button class="btn btn-outline btn-icon btn-sm" onclick="openEdit('${rId}', 'DB KK Sari')" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+<button class="btn btn-outline btn-icon btn-sm" style="color:var(--red);" onclick="delRow('${rId}', 'DB KK Sari')" title="Hapus"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+</div>
+</td>
+</tr>`;
+            }).join('');
+            document.getElementById('kkPagination').style.display = 'flex';
+            document.getElementById('kkPageInfo').textContent = `Halaman ${kkCurrentPage} dari ${totalPages}`;
+            document.getElementById('kkPrevBtn').disabled = kkCurrentPage === 1;
+            document.getElementById('kkNextBtn').disabled = kkCurrentPage === totalPages;
+            const selAll = document.getElementById('selAll');
+            if (selAll) selAll.checked = false;
+            updateMoveBtn();
+        }
+        function prevKKPage() {
+            if (kkCurrentPage > 1) { kkCurrentPage--; renderKKSari(); }
+        }
+        function nextKKPage() {
+            const totalPages = Math.ceil(currentKKSariFiltered.length / ITEMS_PER_PAGE) || 1;
+            if (kkCurrentPage < totalPages) { kkCurrentPage++; renderKKSari(); }
+        }
+        // ─── LOAD DISTRIBUSI ──────────────────────────────────────────────────────────
+        function loadDistribusi() { loadAllData(); }
+
+        function renderDistribusi() {
+            const data = currentDistFiltered;
+            const body = document.getElementById('distBody');
+            document.getElementById('distInfo').textContent = data.length + ' record';
+            const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE) || 1;
+            if (distCurrentPage > totalPages) distCurrentPage = totalPages;
+            if (distCurrentPage < 1) distCurrentPage = 1;
+            if (!data.length) {
+                body.innerHTML = '<tr><td colspan="11"><div class="empty">Belum ada data yang cocok</div></td></tr>';
+                document.getElementById('distPagination').style.display = 'none';
+                return;
+            }
+            const startIndex = (distCurrentPage - 1) * ITEMS_PER_PAGE;
+            const paginatedData = data.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+            body.innerHTML = paginatedData.map(row => {
+                const rId = row[11];
+                return `
+<tr>
+<td>${esc(row[1])}</td>
+<td>${formatTgl(esc(row[2]))}</td>
+<td style="max-width:180px;white-space:normal;">${esc(row[3])}</td>
+<td><strong>${esc(row[4])}</strong></td>
+<td>${esc(row[5])}</td>
+<td>${esc(row[6])}</td>
+<td style="text-align:right;font-weight:600;">${esc(row[7])}</td>
+<td><span class="badge ${row[8] === 'Permintaan' ? 'b-perm' : 'b-pemen'}">${esc(row[8])}</span></td>
+<td>${esc(row[9])}</td>
+<td>${esc(row[10])}</td>
+<td>
+    <div class="tb-actions">
+        <button class="btn btn-outline btn-icon btn-sm" onclick="openEdit('${rId}', 'DB Distribusi')" title="Edit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button class="btn btn-outline btn-icon btn-sm" style="color:var(--red);" onclick="delRow('${rId}', 'DB Distribusi')" title="Hapus">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
+    </div>
+</td>
+</tr>`;
+            }).join('');
+            document.getElementById('distPagination').style.display = 'flex';
+            document.getElementById('distPageInfo').textContent = `Halaman ${distCurrentPage} dari ${totalPages}`;
+            document.getElementById('distPrevBtn').disabled = distCurrentPage === 1;
+            document.getElementById('distNextBtn').disabled = distCurrentPage === totalPages;
+        }
+
+        function prevDistPage() {
+            if (distCurrentPage > 1) { distCurrentPage--; renderDistribusi(); }
+        }
+        function nextDistPage() {
+            const totalPages = Math.ceil(currentDistFiltered.length / ITEMS_PER_PAGE) || 1;
+            if (distCurrentPage < totalPages) { distCurrentPage++; renderDistribusi(); }
+        }
+
+        // ─── SELECT ALL / MOVE ────────────────────────────────────────────────────────
+        let selectedKKSariIds = new Set();
+        let idsToMove = [];
+        
+        function toggleAll(cb) {
+            if (cb.checked) {
+                currentKKSariFiltered.forEach(row => selectedKKSariIds.add(row[11].toString()));
+            } else {
+                selectedKKSariIds.clear();
+            }
+            document.querySelectorAll('.row-cb').forEach(c => { 
+                c.checked = cb.checked; 
+                c.closest('tr').classList.toggle('sel', cb.checked); 
+            });
+            updateMoveBtnBase();
+        }
+        
+        function updateMoveBtn(cb) {
+            if (cb) {
+                if (cb.checked) selectedKKSariIds.add(cb.value);
+                else selectedKKSariIds.delete(cb.value);
+                cb.closest('tr').classList.toggle('sel', cb.checked);
+            }
+            updateMoveBtnBase();
+        }
+        
+        function updateMoveBtnBase() {
+            document.getElementById('moveBtn').disabled = selectedKKSariIds.size === 0;
+            const selAll = document.getElementById('selAll');
+            if (selAll && currentKKSariFiltered.length > 0) {
+                selAll.checked = currentKKSariFiltered.every(row => selectedKKSariIds.has(row[11].toString()));
+            }
+        }
+        
+        function moveSelected() {
+            idsToMove = Array.from(selectedKKSariIds);
+            if (!idsToMove.length) { showAlert('Pilih minimal 1 data.', 'err'); return; }
+            showPasswordPrompt('move');
+        }
+
+        function showPasswordPrompt(action, data) {
+            activeAction = action;
+            pendingActionData = data;
+            document.getElementById('pwdInput').value = '';
+            document.getElementById('pwdModal').classList.add('show');
+            setTimeout(() => document.getElementById('pwdInput').focus(), 100);
+        }
+
+        function closePwdModal() {
+            document.getElementById('pwdModal').classList.remove('show');
+            const input = document.getElementById('pwdInput');
+            input.type = 'password';
+            document.getElementById('pwdToggleIcon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        }
+        function togglePwd() {
+            const input = document.getElementById('pwdInput');
+            const icon = document.getElementById('pwdToggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
+        function confirmMoveAction() {
+            const pass = document.getElementById('pwdInput').value;
+            if (pass !== "adminuser") {
+                showAlert("Password salah!", "err");
+                document.getElementById('pwdInput').value = '';
+                document.getElementById('pwdInput').focus();
+                return;
+            }
+            closePwdModal();
+            if (activeAction === 'move') executeMove();
+            else if (activeAction === 'edit') executeOpenEdit();
+            else if (activeAction === 'delete') executeDelete();
+            else if (activeAction === 'saveEdit') executeSaveEdit();
+        }
+
+        function executeMove() {
+            const btn = document.getElementById('moveBtn');
+            btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Memproses…';
+            google.script.run
+                .withSuccessHandler(r => {
+                    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg> Pindah ke DB Distribusi';
+                    btn.disabled = true;
+                    if (r.success) { showAlert(r.message, 'ok'); loadAllData(); document.getElementById('selAll').checked = false; }
+                    else showAlert('Gagal: ' + r.error, 'err');
+                })
+                .withFailureHandler(err => { btn.disabled = false; btn.innerHTML = 'Pindah ke DB Distribusi'; showAlert('Error: ' + err.message, 'err'); })
+                .moveToDistribusi(idsToMove);
+        }
+
+        // ─── DELETE ───────────────────────────────────────────────────────────────────
+        function delRow(id, sheet) {
+            if (sheet === 'DB Distribusi') {
+                showPasswordPrompt('delete', { id, sheet });
+            } else {
+                pendingActionData = { id, sheet };
+                executeDelete();
+            }
+        }
+
+        function executeDelete() {
+            const { id, sheet } = pendingActionData;
+            if (!confirm('Hapus data ini?')) return;
+
+            const runner = google.script.run
+                .withSuccessHandler(r => {
+                    if (r.success) { showAlert('Data berhasil dihapus.', 'ok'); loadAllData(); }
+                    else showAlert('Gagal: ' + r.error, 'err');
+                })
+                .withFailureHandler(err => showAlert('Error: ' + err.message, 'err'));
+
+            if (sheet === 'DB Distribusi') runner.deleteFromDistribusi(id);
+            else runner.deleteFromKKSari(id);
+        }
+
+
+        // ─── EDIT MODAL ───────────────────────────────────────────────────────────────
+        function openEdit(id, sheet) {
+            editSheet = sheet || 'NAMA SHEET KALIAN';
+            if (editSheet === 'NAMA SHEET KALIAN') {
+                showPasswordPrompt('edit', { id, sheet: editSheet });
+            } else {
+                pendingActionData = { id, sheet: editSheet };
+                executeOpenEdit();
+            }
+        }
+
+        function executeOpenEdit() {
+            const { id, sheet } = pendingActionData;
+            const dataList = sheet === 'DB Distribusi' ? distData : kkData;
+
+            // Cari row berdasarkan ID (Row Index)
+            let row = dataList.find(r => String(r[11]) === String(id));
+            if (!row) row = dataList.find(r => String(r[r.length - 1]) === String(id));
+
+            if (!row) {
+                showAlert('Data tidak ditemukan!', 'err');
+                return;
+            }
+
+            editId = id;
+            editSheet = sheet;
+
+            const jumlahRaw = row[7];
+            const jumlahVal = typeof jumlahRaw === 'number' ? Math.round(jumlahRaw) : (parseInt(jumlahRaw) || 0);
+
+            document.getElementById('modalBody').innerHTML = `
+<div class="fg fg-2" style="gap:13px;">
+<div class="fgroup"><label>Jenis Permintaan</label>
+<input class="edit-input" id="e_jp" value="${esc(row[1])}"></div>
+<div class="fgroup"><label>Tanggal Droping</label>
+<input type="date" class="edit-input" id="e_tgl" value="${esc(row[2])}"></div>
+<div class="fgroup"><label>RS / Klinik</label>
+<input class="edit-input" id="e_rs" value="${esc(row[3])}"></div>
+<div class="fgroup"><label>Komponen</label>
+<select class="edit-input" id="e_komp">
+${KOMPONEN.map(k => `<option value="${k}" ${row[4] === k ? 'selected' : ''}>${k}</option>`).join('')}
+</select></div>
+<div class="fgroup"><label>Gol. Darah</label>
+<select class="edit-input" id="e_gol">
+${GOL.map(g => `<option value="${g}" ${row[5] === g ? 'selected' : ''}>${g}</option>`).join('')}
+</select></div>
+<div class="fgroup"><label>Rhesus</label>
+<select class="edit-input" id="e_rh">
+${RHESUS.map(r => `<option value="${r}" ${row[6] === r ? 'selected' : ''}>${r}</option>`).join('')}
+</select></div>
+<div class="fgroup"><label>Jumlah</label>
+<input type="number" class="edit-input" id="e_jml" value="${jumlahVal}"></div>
+
+<div class="fgroup"><label>Jenis</label>
+<select class="edit-input" id="e_jenis">
+<option value="Permintaan" ${row[8] === 'Permintaan' ? 'selected' : ''}>Permintaan</option>
+<option value="Pemenuhan"  ${row[8] === 'Pemenuhan' ? 'selected' : ''}>Pemenuhan</option>
+</select></div>
+</div>`;
+            document.getElementById('modal').classList.add('show');
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('show'); editId = null; }
+        function saveEdit() {
+            if (!editId) return;
+            if (editSheet === 'DB Distribusi') {
+                showPasswordPrompt('saveEdit');
+            } else {
+                executeSaveEdit();
+            }
+        }
+
+        function executeSaveEdit() {
+            const tgl = document.getElementById('e_tgl').value;
+            const d = tgl ? new Date(tgl + 'T00:00:00') : null;
+            const rec = {
+                jenisPermintaan: document.getElementById('e_jp').value,
+                tanggal: tgl,
+                rsKlinik: document.getElementById('e_rs').value,
+                komponen: document.getElementById('e_komp').value,
+                golDarah: document.getElementById('e_gol').value,
+                rhesus: document.getElementById('e_rh').value,
+                jumlah: parseInt(document.getElementById('e_jml').value) || 0,
+                jenis: document.getElementById('e_jenis').value,
+                bulan: d ? MONTHS[d.getMonth()] : '',
+                tahun: d ? d.getFullYear() : ''
+            };
+            const btn = document.getElementById('modalSaveBtn');
+            btn.disabled = true; btn.textContent = 'Menyimpan…';
+            const runner = editSheet === 'DB Distribusi'
+                ? google.script.run.withSuccessHandler(onSaveSuccess).withFailureHandler(onSaveFail).updateDistribusiRow(editId, rec)
+                : google.script.run.withSuccessHandler(onSaveSuccess).withFailureHandler(onSaveFail).updateKKSariRow(editId, rec);
+        }
+        function onSaveSuccess(r) {
+            const btn = document.getElementById('modalSaveBtn');
+            btn.disabled = false; btn.textContent = 'Simpan';
+            if (r.success) { showAlert('Data berhasil diperbarui.', 'ok'); closeModal(); loadAllData(); }
+            else showAlert('Gagal: ' + r.error, 'err');
+        }
+        function onSaveFail(err) {
+            const btn = document.getElementById('modalSaveBtn');
+            btn.disabled = false; btn.textContent = 'Simpan';
+            showAlert('Error: ' + err.message, 'err');
+        }
+        // ─── DASHBOARD ────────────────────────────────────────────────────────────────
+        function toggleFilter() {
+            const box = document.getElementById('distFilterBox');
+            const isHidden = window.getComputedStyle(box).display === 'none';
+            box.style.display = isHidden ? 'block' : 'none';
+            if (isHidden && document.getElementById('monthFilterGrid').children.length === 0) {
+                initMonthFilters();
+            }
+        }
+        function initMonthFilters() {
+            const grid = document.getElementById('monthFilterGrid');
+            const curMonth = MONTHS[new Date().getMonth()];
+            let html = `
+<div style="grid-column: 1 / -1; margin-bottom: 5px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
+<label class="month-item" style="padding:4px 8px; font-size:11px; font-weight:bold; color:var(--primary); display:inline-flex;">
+<input type="checkbox" id="selectAllMonths" onchange="toggleAllMonths(this)">
+PILIH SEMUA
+</label>
+</div>
+`;
+            html += MONTHS.map((m, i) => `
+<label class="month-item" style="padding:4px 8px; font-size:11px;">
+<input type="checkbox" name="fMonth" value="${m}" ${m === curMonth ? 'checked' : ''} onchange="validateAndLoadDash(this)">
+${m}
+</label>
+`).join('');
+            grid.innerHTML = html;
+            updateSelectAllState();
+        }
+        function toggleAllMonths(el) {
+            const checkboxes = document.querySelectorAll('input[name="fMonth"]');
+            checkboxes.forEach(cb => cb.checked = el.checked);
+            validateAndLoadDash();
+        }
+        function updateSelectAllState() {
+            const checkboxes = document.querySelectorAll('input[name="fMonth"]');
+            const checked = document.querySelectorAll('input[name="fMonth"]:checked');
+            const selectAll = document.getElementById('selectAllMonths');
+            if (selectAll) {
+                selectAll.checked = checkboxes.length === checked.length && checkboxes.length > 0;
+            }
+        }
+        function validateAndLoadDash(el) {
+            updateSelectAllState();
+            loadDistribusiDashboard();
+        }
+
+        function loadKKSariDashboard() {
+            const container = document.getElementById('dashGridKKSari');
+            container.innerHTML = '<div class="dash-empty">Memuat…</div>';
+            google.script.run
+                .withSuccessHandler(r => renderDashboard(r.data || {}, 'dashGridKKSari'))
+                .withFailureHandler(err => showAlert('Error Dashboard KK Sari: ' + err.message, 'err'))
+                .getDashboardData('DB KK Sari', []);
+        }
+        function loadDistribusiDashboard() {
+            const container = document.getElementById('dashGridDistribusi');
+            container.innerHTML = '<div class="dash-empty">Memuat…</div>';
+            let selectedMonths = [];
+            if (document.getElementById('monthFilterGrid').children.length > 0) {
+                selectedMonths = [...document.querySelectorAll('input[name="fMonth"]:checked')].map(c => c.value);
+            } else {
+                // Default to current month if filter hasn't been initialized
+                selectedMonths = [MONTHS[new Date().getMonth()]];
+            }
+            google.script.run
+                .withSuccessHandler(r => renderDashboard(r.data || {}, 'dashGridDistribusi'))
+                .withFailureHandler(err => showAlert('Error Dashboard Distribusi: ' + err.message, 'err'))
+                .getDashboardData('DB Distribusi', selectedMonths);
+        }
+        function renderDashboard(data, containerId) {
+            const container = document.getElementById(containerId);
+            const keys = Object.keys(data);
+            if (!keys.length) {
+                container.innerHTML = '<div class="dash-empty">Tidak ada data.</div>';
+                return;
+            }
+            // Separate lists according to type
+            const droping = [];
+            const nonDroping = [];
+            keys.forEach(rs => {
+                if (data[rs].tipe === 'droping') droping.push(rs);
+                else nonDroping.push(rs);
+            });
+            let html = `
+<table class="dash-table">
+<thead>
+<tr class="dt-head">
+<th>Distribusi</th>
+<th style="text-align:center; width:110px;">Permintaan</th>
+<th style="text-align:center; width:110px;">Pemenuhan</th>
+<th style="text-align:center; width:110px;">Persentase</th>
+</tr>
+</thead>
+<tbody>
+`;
+            let dropReq = 0, dropPem = 0;
+            droping.sort().forEach(rs => {
+                const p1 = data[rs].permintaan;
+                const p2 = data[rs].pemenuhan;
+                const pct = p1 > 0 ? ((p2 / p1) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+                dropReq += p1; dropPem += p2;
+                html += `
+<tr class="dt-row">
+<td>${esc(rs)}</td>
+<td style="text-align:center;">${p1}</td>
+<td style="text-align:center;">${p2}</td>
+<td style="text-align:center;">${pct}</td>
+</tr>
+`;
+            });
+            const subDropPct = dropReq > 0 ? ((dropPem / dropReq) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+            html += `
+<tr class="dt-sub">
+<td>Jumlah</td>
+<td style="text-align:center;">${dropReq}</td>
+<td style="text-align:center;">${dropPem}</td>
+<td style="text-align:center;">${subDropPct}</td>
+</tr>
+`;
+            let nonReq = 0, nonPem = 0;
+            nonDroping.sort().forEach(rs => {
+                const p1 = data[rs].permintaan;
+                const p2 = data[rs].pemenuhan;
+                const pct = p1 > 0 ? ((p2 / p1) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+                nonReq += p1; nonPem += p2;
+                html += `
+<tr class="dt-row">
+<td>${esc(rs)}</td>
+<td style="text-align:center;">${p1}</td>
+<td style="text-align:center;">${p2}</td>
+<td style="text-align:center;">${pct}</td>
+</tr>
+`;
+            });
+            const subNonPct = nonReq > 0 ? ((nonPem / nonReq) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+            html += `
+<tr class="dt-sub">
+<td>Jumlah</td>
+<td style="text-align:center;">${nonReq}</td>
+<td style="text-align:center;">${nonPem}</td>
+<td style="text-align:center;">${subNonPct}</td>
+</tr>
+`;
+            const totalReq = dropReq + nonReq;
+            const totalPem = dropPem + nonPem;
+            const totalPct = totalReq > 0 ? ((totalPem / totalReq) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+            html += `
+<tr class="dt-total">
+<td>Total Droping & Non Droping</td>
+<td style="text-align:center; font-weight:bold;">${totalReq}</td>
+<td style="text-align:center; font-weight:bold;">${totalPem}</td>
+<td style="text-align:center; font-weight:bold;">${totalPct}</td>
+</tr>
+</tbody>
+</table>
+`;
+            container.innerHTML = html;
+        }
+        // ─── HELPERS ──────────────────────────────────────────────────────────────────
+        function esc(v) { if (v === null || v === undefined) return ''; return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function formatTgl(str) {
+            if (!str) return '';
+            // Handle ISO string from getValues()
+            if (str.includes('T')) str = str.split('T')[0];
+            const parts = String(str).split('-');
+            if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+            return str;
+        }
+
+        function showAlert(msg, type) {
+            const el = document.getElementById('alert');
+            el.className = 'alert ' + (type === 'ok' ? 'al-ok' : 'al-err');
+            el.textContent = msg;
+            el.style.display = 'block';
+            clearTimeout(el._t);
+            el._t = setTimeout(() => el.style.display = 'none', 3800);
+        }
+        // ─── PRINT / PDF ──────────────────────────────────────────────────────────────
+        function printDashboard(containerId, title) {
+            const container = document.getElementById(containerId);
+            if (!container || !container.innerHTML.includes('<table')) {
+                showAlert('Tidak ada data untuk di-print.', 'err');
+                return;
+            }
+            const printWindow = window.open('', '_blank');
+            const printHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+<title>${title}</title>
+<style>
+* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+@page { size: A4 portrait; margin: 25mm 25mm 20mm 25mm; }
+body {
+    background: #fff;
+    color: #000;
+    margin: 0;
+    padding: 0;
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+}
+#wrapper {
+    width: 85%;
+    margin: 0 auto;
+    padding-top: 10px;
+}
+h2 {
+    text-align: center;
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    margin-bottom: 20px;
+    margin-top: 0;
+    color: #000;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.dash-table, table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1.5px solid #000 !important;
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    font-size: 12px;
+}
+.dash-table th, .dash-table td, th, td {
+    border: 1px solid #000 !important;
+    padding: 7px 12px !important;
+    color: #000 !important;
+}
+.dt-head th { background: #b0d8c0 !important; font-weight: bold !important; border-bottom: 2px solid #000 !important; }
+.dt-head th:nth-child(2), .dt-head th:nth-child(3), .dt-head th:nth-child(4) { background: #b4d0e6 !important; }
+.dt-row td { background: #f8c8c5 !important; }
+.dt-sub td { background: #b4d4a8 !important; font-weight: bold !important; }
+.dt-total td { background: #b4d0e6 !important; font-weight: bold !important; border-top: 2px solid #000 !important; }
+.tbl-wrap { border: none !important; }
+</style>
+</head>
+<body onload="setTimeout(function() { window.print(); window.close(); }, 600);">
+<div id="wrapper">
+    <h2>${title}</h2>
+    ${container.innerHTML}
+</div>
+</body>
+</html>
+`;
+            printWindow.document.open();
+            printWindow.document.write(printHtml);
+            printWindow.document.close();
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('modal').addEventListener('click', function (e) { if (e.target === this) closeModal(); });
+        // ─── INIT ─────────────────────────────────────────────────────────────────────
+        window.onload = function () {
+            loadAllData();
+        };
+
+    </script>
+
+
+    <!-- ================== START PASSWORD MODAL ================== -->
+
+    <style>
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 60, 0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .pwd-box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(196, 30, 58, 0.15);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .pwd-box {
+            transform: translateY(0);
+        }
+
+        .pwd-icon {
+            margin-bottom: 15px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(196, 30, 58, 0.1);
+            padding: 15px;
+            border-radius: 50%;
+        }
+    </style>
+
+    <div id="pwdModal" class="modal-overlay">
+        <div class="pwd-box">
+            <div class="pwd-icon">
+
+                <!-- Ikon Kantong Darah -->
+                <svg width="45" height="45" viewBox="0 0 24 24" fill="#C41E3A" stroke="#8a0015" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 8v8a5 5 0 0 0 10 0V8a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2z" />
+                    <path d="M10 6V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2" />
+                    <path d="M12 12v4M10 14h4" stroke="#fff" stroke-width="2" />
+                </svg>
+            </div>
+            <h3 style="font-family:'Cormorant Garamond', serif; font-size:22px; color:#C41E3A; margin-bottom: 5px;">
+                Otorisasi Pemindahan</h3>
+            <p style="font-size:13px; color:#5a7a96; margin-bottom: 18px;">Masukkan password untuk memindahkan data ke
+                DB Distribusi.</p>
+            <div style="position:relative; margin-bottom: 20px;">
+                <input type="password" id="pwdInput" placeholder="Masukkan Password"
+                    style="text-align:center; font-size:15px; width:100%; padding-right:40px; padding-left:40px;"
+                    onkeypress="if(event.key==='Enter') confirmMoveAction()">
+                <span onclick="togglePwd()"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#5a7a96; display:flex; align-items:center;"
+                    id="pwdToggleIcon" title="Tampilkan Password">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-outline" style="flex:1;" onclick="closePwdModal()">Batal</button>
+                <button class="btn btn-primary btn-block" onclick="confirmMoveAction()">Konfirmasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== START REPORT MODULE ================== -->
+    <div style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
+        <button class="btn btn-gold"
+            style="padding: 10px 20px; font-size: 16px; border: 1px solid #b07d10; border-radius: 6px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #b07d10; font-weight: 600;"
+            onclick="openReportModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Cetak Laporan Lengkap
+        </button>
+        <button class="btn btn-gold"
+            style="padding: 10px 20px; font-size: 16px; border: 1px solid #1a6e3a; border-radius: 6px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; color: #1a6e3a; font-weight: 600;"
+            onclick="openAnnualReportModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Print Laporan Tahunan
+        </button>
+    </div>
+
+    <style>
+        /* CSS For Report Modal */
+        #reportModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 60, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        #reportModal.show {
+            display: flex;
+        }
+
+        #annualReportModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 60, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        #annualReportModal.show {
+            display: flex;
+        }
+
+        .report-box {
+            background: #fff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 1250px;
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(10, 30, 60, 0.2);
+            overflow: hidden;
+        }
+
+        .report-header {
+            padding: 15px 24px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+        }
+
+        /* ── REPORT MODAL BUTTONS ── */
+        .rpt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-family: 'Trebuchet MS', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.18s, box-shadow 0.18s, transform 0.1s;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            user-select: none;
+        }
+
+        .rpt-btn:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .rpt-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .rpt-btn-close {
+            background: #fff;
+            color: #444;
+            border: 1.5px solid #ccc;
+        }
+
+        .rpt-btn-close:hover {
+            background: #f0f0f0;
+            border-color: #aaa;
+        }
+
+        .rpt-btn-print-red {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            color: #fff;
+        }
+
+        .rpt-btn-print-red:hover {
+            background: linear-gradient(135deg, #d4264a 0%, #a00000 100%);
+        }
+
+        .rpt-btn-print-green {
+            background: linear-gradient(135deg, #1a6e3a 0%, #0d4a25 100%);
+            color: #fff;
+        }
+
+        .rpt-btn-print-green:hover {
+            background: linear-gradient(135deg, #218a48 0%, #115a2d 100%);
+        }
+
+        .report-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            background: #fff;
+        }
+
+        .rtable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+        }
+
+        .rtable th,
+        .rtable td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .rt-hdr-1 {
+            background-color: #b4d0e6 !important;
+        }
+
+        .rt-hdr-2 {
+            background-color: #e2efda !important;
+        }
+
+        .rt-hdr-3 {
+            background-color: #fff2cc !important;
+        }
+
+        .rt-droping {
+            background-color: #dbeef8 !important;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .rt-nondroping {
+            background-color: #e0e0e0 !important;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .rt-row td {
+            background-color: #fff;
+        }
+
+        .rt-row td:first-child {
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        .rt-jumlah td {
+            background-color: #e2efda !important;
+            font-weight: bold;
+        }
+
+        .rt-total td {
+            background-color: #fff2cc !important;
+            font-weight: bold;
+        }
+
+        .rt-grand-total td {
+            background-color: #f8c8c5 !important;
+            font-weight: bold;
+        }
+
+        .sig-container {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            padding: 0 30px;
+            font-weight: bold;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 250px;
+        }
+
+        .sig-name {
+            margin-top: 70px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+
+    <div id="reportModal">
+
+        <!-- HTML For Report Modal -->
+        <div class="report-box">
+            <div class="report-header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 style="font-family:'Cormorant Garamond', serif; font-size:18px; margin:0; color:#000;">📊 Cetak
+                        Laporan Distribusi</h2>
+                    <select id="reportMonth"
+                        style="width:150px; height:32px; padding:2px 10px; border: 1px solid #ccc; border-radius: 4px;"
+                        onchange="generateReport()">
+                    </select>
+                    <select id="reportYear"
+                        style="width:120px; height:32px; padding:2px 10px; border: 1px solid #ccc; border-radius: 4px;"
+                        onchange="generateReport()">
+                    </select>
+                </div>
+                <div style="display:flex; gap:10px;"><button class="rpt-btn rpt-btn-close"
+                        onclick="closeReportModal()">&#10005; Tutup</button><button class="rpt-btn rpt-btn-print-red"
+                        onclick="printReportModal()">&#128424; Print/PDF</button></div>
+            </div>
+            <div class="report-body" id="reportPrintArea">
+                <div
+                    style="text-align:center; font-family:'Trebuchet MS', Arial, sans-serif; font-size:16px; font-weight:bold; margin-bottom:10px; color:#000;">
+                    LAPORAN DISTRIBUSI <span id="reportYearText"></span>
+                </div>
+                <div id="reportTableContainer"></div>
+                <div class="sig-container">
+                    <div class="sig-box">Mengetahui,<br>Kabid,Pelayanan Darah<br>Unit Donor Darah<br>PMI Kota Banda Aceh
+                        <div class="sig-name">Nama Kabid, A.Md.AK., SKM</div>
+                    </div>
+                    <div class="sig-box">Mengesahkan,<br>Unit Donor Darah<br>Palang Merah Indonesia<br>Kota Banda
+                        Aceh<br>Kepala<div class="sig-name">dr. Nama Kepala, M.K.M</div>
+                    </div>
+                    <div class="sig-box">Banda Aceh, <span id="reportDateText"></span><br>Kasie Pasien Servis &
+                        Distribusi<div class="sig-name">Nama kasi, A.Md.AK</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANNUAL REPORT MODAL -->
+    <div id="annualReportModal">
+        <div class="report-box">
+            <div class="report-header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 style="font-family:'Cormorant Garamond', serif; font-size:18px; margin:0; color:#000;">📅
+                        Laporan Tahunan</h2>
+                    <select id="annualReportYear"
+                        style="width:120px; height:32px; padding:2px 10px; border: 1px solid #ccc; border-radius: 4px;"
+                        onchange="generateAnnualReport()">
+                    </select>
+                </div>
+                <div style="display:flex; gap:10px;"><button class="rpt-btn rpt-btn-close"
+                        onclick="closeAnnualReportModal()">&#10005; Tutup</button><button
+                        class="rpt-btn rpt-btn-print-green" onclick="printAnnualReportModal()">&#128424;
+                        Print/PDF</button></div>
+            </div>
+            <div class="report-body" id="annualReportPrintArea">
+                <div
+                    style="text-align:center; font-family:'Trebuchet MS', Arial, sans-serif; font-size:16px; font-weight:bold; margin-bottom:10px; color:#000;">
+                    LAPORAN DISTRIBUSI DARAH TAHUNAN <span id="annualReportYearText"></span>
+                </div>
+                <div id="annualReportTableContainer"></div>
+                <div class="sig-container">
+                    <div class="sig-box">Mengetahui,<br>Kabid, Pelayanan Darah<br>Unit Donor Darah<br>PMI Kota Banda
+                        Aceh<div class="sig-name">Zulfikri, A.Md.AK., SKM</div>
+                    </div>
+                    <div class="sig-box">Mengesahkan,<br>Unit Donor Darah<br>Palang Merah Indonesia<br>Kota Banda
+                        Aceh<br>Kepala<div class="sig-name">dr. Mutia Abdullah, M.K.M</div>
+                    </div>
+                    <div class="sig-box">Banda Aceh, <span id="annualReportDateText"></span><br>Kasie Pasien Servis &
+                        Distribusi<div class="sig-name">Nurmala Sari, A.Md.AK</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openReportModal() {
+            const selM = document.getElementById('reportMonth');
+            selM.innerHTML = '<option value="">&mdash; Semua Bulan &mdash;</option>' + MONTHS.map((m, i) => `<option value="${m}">${m}</option>`).join('');
+            selM.value = MONTHS[new Date().getMonth()];
+
+            const selY = document.getElementById('reportYear');
+            if (selY.options.length === 0) {
+                const currentYear = new Date().getFullYear();
+                let yHtml = '<option value="">&mdash; Semua Tahun &mdash;</option>';
+                for (let y = 2026; y <= currentYear + 2; y++) yHtml += `<option value="${y}">${y}</option>`;
+                selY.innerHTML = yHtml;
+                selY.value = currentYear;
+            }
+            document.getElementById('reportModal').classList.add('show');
+            document.getElementById('reportTableContainer').innerHTML = '<div style="text-align:center; padding: 50px;">Memuat data...</div>';
+            google.script.run
+                .withSuccessHandler(r => {
+                    distData = r.data || [];
+                    generateReport();
+                })
+                .withFailureHandler(err => {
+                    showAlert('Gagal load data: ' + err.message, 'err');
+                    document.getElementById('reportTableContainer').innerHTML = '<div style="text-align:center; padding: 50px; color:red;">Gagal memuat data.</div>';
+                })
+                .getDistribusiData();
+        }
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('show');
+        }
+        function generateReport() {
+            const month = document.getElementById('reportMonth').value;
+            const year = document.getElementById('reportYear').value;
+            let titleText = '';
+            if (month && year) titleText = month.toUpperCase() + ' ' + year;
+            else if (month) titleText = month.toUpperCase();
+            else if (year) titleText = year;
+            else titleText = 'KESELURUHAN';
+            document.getElementById('reportYearText').innerText = titleText;
+            const d = new Date();
+            const today = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+            document.getElementById('reportDateText').innerText = today;
+            const dropingRS = [
+                "ITD ZA", "MEURAXA", "RSIA", "RS Teuku Umar Calang",
+                "UDD Kota Langsa", "UDD Kab. Tangerang", "UDD Kab. Pidie",
+                "UDD Kab. Aceh Utara", "UDD. Kota Medan"
+            ];
+            const nonDropingRS = [
+                "RS. HARAPAN BUNDA", "RS. TEUKU FAKINAH", "RS. PERTAMEDIKA",
+                "RS. KESDAM IM", "RS. BHAYANGKARA", "RS. CEMPAKA AZ-ZAHRA",
+                "MEUTIA HOSPITAL", "RS. IBNU SINA", "RS. PENDIDIKAN USK",
+                "RS. KABUPATEN ACEH BESAR", "KLINIK KASEHAT WALAFIAT",
+                "NEW PUTRO PHANG", "KLINIK NADIRAH", "KLINIK BUNGONG SEULANGA",
+                "RS. JIWA ACEH", "RS. HERMINA", "RS. CEMPAKA LIMA",
+                "KLINIK UTAMA REZEKI MERASI", "RSU PUTRI BIDADARI"
+            ];
+            const initCounts = () => ({
+                WB: 0, PRC: 0, TC: 0, FFP: 0, FP: 0, AHF: 0, LP: 0, JML_K: 0,
+                A: 0, B: 0, AB: 0, O: 0, Positif: 0, Negatif: 0, JML_G: 0
+            });
+            const rsData = {};
+            [...dropingRS, ...nonDropingRS].forEach(rs => {
+                rsData[rs] = { Permintaan: initCounts(), Pemenuhan: initCounts() };
+            });
+            const filtered = distData.filter(r => {
+                const rowBulan = String(r[9]).trim().toLowerCase();
+                const rowTahun = String(r[10]).trim();
+                const matchMonth = !month || rowBulan === month.toLowerCase();
+                const matchYear = !year || rowTahun === year;
+                return matchMonth && matchYear;
+            });
+            const normalizeRS = (name) => String(name).toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const rsMap = {};
+            [...dropingRS, ...nonDropingRS].forEach(rs => rsMap[normalizeRS(rs)] = rs);
+            filtered.forEach(row => {
+                const normRs = normalizeRS(row[3]);
+                const rsVal = rsMap[normRs];
+                if (!rsVal) return;
+                const komp = String(row[4]).trim().toUpperCase();
+                const gol = String(row[5]).trim().toUpperCase();
+                let rh = String(row[6]).trim().toLowerCase();
+                if (rh === 'positif' || rh === '+') rh = 'Positif';
+                if (rh === 'negatif' || rh === '-') rh = 'Negatif';
+                const jml = parseInt(row[7]) || 0;
+                const rawTipe = String(row[8]).trim().toLowerCase();
+                const tipe = rawTipe === 'permintaan' ? 'Permintaan' : 'Pemenuhan';
+                const tgt = rsData[rsVal][tipe];
+                if (tgt.hasOwnProperty(komp)) { tgt[komp] += jml; tgt.JML_K += jml; }
+                if (tgt.hasOwnProperty(gol)) tgt[gol] += jml;
+                if (tgt.hasOwnProperty(rh)) tgt[rh] += jml;
+                if (['A', 'B', 'AB', 'O'].includes(gol)) tgt.JML_G += jml;
+            });
+            const buildRow = (rsName, dData) => {
+                const p1 = dData.Permintaan;
+                const p2 = dData.Pemenuhan;
+                const pct = p1.JML_K > 0 ? ((p2.JML_K / p1.JML_K) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+                return `
+<tr class="rt-row">
+<td>${esc(rsName)}</td>
+<td>${p1.WB}</td><td>${p1.PRC}</td><td>${p1.TC}</td><td>${p1.FFP}</td><td>${p1.FP}</td><td>${p1.AHF}</td><td>${p1.LP}</td><td style="background-color:#fff2cc;font-weight:bold;">${p1.JML_K}</td>
+<td>${p1.A}</td><td>${p1.B}</td><td>${p1.AB}</td><td>${p1.O}</td><td>${p1.Positif}</td><td>${p1.Negatif}</td><td style="background-color:#fff2cc;font-weight:bold;">${p1.JML_G}</td>
+<td>${p2.WB}</td><td>${p2.PRC}</td><td>${p2.TC}</td><td>${p2.FFP}</td><td>${p2.FP}</td><td>${p2.AHF}</td><td>${p2.LP}</td><td style="background-color:#e2efda;font-weight:bold;">${p2.JML_K}</td>
+<td>${p2.A}</td><td>${p2.B}</td><td>${p2.AB}</td><td>${p2.O}</td><td>${p2.Positif}</td><td>${p2.Negatif}</td><td style="background-color:#e2efda;font-weight:bold;">${p2.JML_G}</td>
+<td style="text-align:right;">${pct}</td>
+</tr>`;
+            };
+            const sumRow = (rsList) => {
+                const s = { Permintaan: initCounts(), Pemenuhan: initCounts() };
+                rsList.forEach(rs => {
+                    ['Permintaan', 'Pemenuhan'].forEach(tipe => {
+                        for (let k in s[tipe]) s[tipe][k] += rsData[rs][tipe][k];
+                    });
+                });
+                return s;
+            };
+            const dropSum = sumRow(dropingRS);
+            const nonDropSum = sumRow(nonDropingRS);
+            const buildSumRow = (title, dData, cssClass) => {
+                const p1 = dData.Permintaan;
+                const p2 = dData.Pemenuhan;
+                const pct = p1.JML_K > 0 ? ((p2.JML_K / p1.JML_K) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+                return `
+<tr class="${cssClass}">
+<td>${title}</td>
+<td>${p1.WB}</td><td>${p1.PRC}</td><td>${p1.TC}</td><td>${p1.FFP}</td><td>${p1.FP}</td><td>${p1.AHF}</td><td>${p1.LP}</td><td>${p1.JML_K}</td>
+<td>${p1.A}</td><td>${p1.B}</td><td>${p1.AB}</td><td>${p1.O}</td><td>${p1.Positif}</td><td>${p1.Negatif}</td><td>${p1.JML_G}</td>
+<td>${p2.WB}</td><td>${p2.PRC}</td><td>${p2.TC}</td><td>${p2.FFP}</td><td>${p2.FP}</td><td>${p2.AHF}</td><td>${p2.LP}</td><td>${p2.JML_K}</td>
+<td>${p2.A}</td><td>${p2.B}</td><td>${p2.AB}</td><td>${p2.O}</td><td>${p2.Positif}</td><td>${p2.Negatif}</td><td>${p2.JML_G}</td>
+<td style="text-align:right;">${pct}</td>
+</tr>`;
+            };
+            const buildTotalRow = (title, labelClass, sum1, sum2) => {
+                const p1Total = sum1.Permintaan.JML_K + sum2.Permintaan.JML_K;
+                const p2Total = sum1.Pemenuhan.JML_K + sum2.Pemenuhan.JML_K;
+                const pct = p1Total > 0 ? ((p2Total / p1Total) * 100).toFixed(1).replace('.', ',') + '%' : '0,0%';
+                return `
+<tr>
+<td class="${labelClass}" style="border: 1px solid #000;">${title}</td>
+<td colspan="15" style="border: 1px solid #000; text-align:center; font-weight:bold;">${p1Total}</td>
+<td colspan="15" style="border: 1px solid #000; text-align:center; font-weight:bold;">${p2Total}</td>
+<td style="border: 1px solid #000; text-align:right; font-weight:bold;">${pct}</td>
+</tr>`;
+            };
+            let html = `
+<table class="rtable">
+<tbody class="rt-head">
+<tr>
+<th rowspan="3" class="rt-hdr-1 text-left">Droping</th>
+<th colspan="15" class="rt-hdr-1">Permintaan</th>
+<th colspan="15" class="rt-hdr-1">Pemenuhan</th>
+<th rowspan="3" style="width:25px; vertical-align: middle; text-align: center;"><div style="writing-mode: vertical-rl; transform: rotate(180deg); display: inline-block;">Pemenuhan %</div></th>
+</tr>
+<tr>
+<th colspan="8" class="rt-hdr-2">Komponen</th>
+<th colspan="7" class="rt-hdr-2">Golongan Darah & Rhesus</th>
+<th colspan="8" class="rt-hdr-2">Komponen</th>
+<th colspan="7" class="rt-hdr-2">Golongan Darah & Rhesus</th>
+</tr>
+<tr>
+<th class="rt-hdr-3">WB</th><th class="rt-hdr-3">PRC</th><th class="rt-hdr-3">TC</th><th class="rt-hdr-3">FFP</th><th class="rt-hdr-3">FP</th><th class="rt-hdr-3">AHF</th><th class="rt-hdr-3">LP</th><th class="rt-hdr-3">JML</th>
+<th class="rt-hdr-3">A</th><th class="rt-hdr-3">B</th><th class="rt-hdr-3">AB</th><th class="rt-hdr-3">O</th><th class="rt-hdr-3">Pos</th><th class="rt-hdr-3">Neg</th><th class="rt-hdr-3">JML</th>
+<th class="rt-hdr-3">WB</th><th class="rt-hdr-3">PRC</th><th class="rt-hdr-3">TC</th><th class="rt-hdr-3">FFP</th><th class="rt-hdr-3">FP</th><th class="rt-hdr-3">AHF</th><th class="rt-hdr-3">LP</th><th class="rt-hdr-3">JML</th>
+<th class="rt-hdr-3">A</th><th class="rt-hdr-3">B</th><th class="rt-hdr-3">AB</th><th class="rt-hdr-3">O</th><th class="rt-hdr-3">Pos</th><th class="rt-hdr-3">Neg</th><th class="rt-hdr-3">JML</th>
+</tr>
+</tbody>
+<tbody>
+`;
+            dropingRS.forEach(rs => html += buildRow(rs, rsData[rs]));
+            html += buildSumRow('Jumlah', dropSum, 'rt-jumlah');
+            html += `<tr><td colspan="32" class="rt-nondroping">Non Droping</td></tr>`;
+            nonDropingRS.forEach(rs => {
+                if (rs === 'RS. CEMPAKA LIMA') {
+                    html += `<tr class="page-break"><td colspan="32" style="border: none !important; height: 15mm !important; padding: 0 !important;"></td></tr>`;
+                }
+                html += buildRow(rs, rsData[rs]);
+            });
+            html += buildSumRow('Jumlah', nonDropSum, 'rt-jumlah');
+            html += buildSumRow('Jumlah Droping & Non Droping', sumRow([...dropingRS, ...nonDropingRS]), 'rt-grand-total');
+            html += buildTotalRow('Total Droping', 'rt-droping', dropSum, { Permintaan: initCounts(), Pemenuhan: initCounts() });
+            html += buildTotalRow('Total Non Droping', 'rt-nondroping', { Permintaan: initCounts(), Pemenuhan: initCounts() }, nonDropSum);
+            html += buildTotalRow('Total Droping & Non droping', 'rt-droping', dropSum, nonDropSum);
+            html += `</tbody></table>`;
+            document.getElementById('reportTableContainer').innerHTML = html;
+        }
+        function printReportModal() {
+            const originalTitle = document.title;
+            document.title = "Laporan_Distribusi_Darah";
+            const style = document.createElement('style');
+            style.innerHTML = `
+@media print {
+html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+body > *:not(#reportModal) { display: none !important; }
+#reportModal { position: absolute !important; left: 0; top: 0; width: 100% !important; display: block !important; background: #fff !important; padding-top: 15mm !important; padding-bottom: 15mm !important; padding-left: 5mm !important; padding-right: 5mm !important; box-sizing: border-box !important; border: none !important; box-shadow: none !important; }
+.report-box { box-shadow: none !important; border-radius: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: none !important; overflow: visible !important; border: none !important; margin: 0 !important; padding: 0 !important; background: #fff !important; box-sizing: border-box !important; }
+.report-header { display: none !important; }
+.report-body { padding: 0 !important; overflow: visible !important; height: auto !important; background: #fff !important; border: none !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; width: 100% !important; box-sizing: border-box !important; }
+.rtable th, .rtable td { padding: 2px 1px !important; font-size: 11px !important; line-height: 1.1 !important; color: #000; border: 1px solid #000 !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; box-sizing: border-box !important; }
+.rtable { width: 100% !important; max-width: 100% !important; page-break-inside: auto; margin-bottom: 15px !important; }
+.rtable thead, .rtable .rt-head { display: table-row-group !important; }
+.rtable tr { page-break-inside: avoid; page-break-after: auto; }
+.page-break { page-break-before: always !important; }
+.sig-container { font-size: 11px !important; margin-top: 20px !important; page-break-inside: avoid; padding: 0 40px !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; width: 100% !important; box-sizing: border-box !important; }
+.sig-name { margin-top: 50px !important; }
+#reportPrintArea > div:first-child { font-size: 14px !important; margin-top: 0 !important; margin-bottom: 15px !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; }
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+@page { size: A4 landscape; margin: 0; }
+}
+`;
+            document.head.appendChild(style);
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                    if (document.head.contains(style)) document.head.removeChild(style);
+                }, 1000);
+            }, 100);
+        }
+        // ─── ANNUAL REPORT ────────────────────────────────────────────────────────
+        function openAnnualReportModal() {
+            const selY = document.getElementById('annualReportYear');
+            if (selY.options.length === 0) {
+                const currentYear = new Date().getFullYear();
+                let yHtml = '';
+                for (let y = 2020; y <= currentYear + 2; y++) yHtml += `<option value="${y}">${y}</option>`;
+                selY.innerHTML = yHtml;
+                selY.value = currentYear;
+            }
+            document.getElementById('annualReportModal').classList.add('show');
+            document.getElementById('annualReportTableContainer').innerHTML = '<div style="text-align:center; padding: 50px;">Memuat data...</div>';
+            google.script.run
+                .withSuccessHandler(r => {
+                    distData = r.data || [];
+                    console.log('[Annual] Data loaded from DB Distribusi:', distData.length, 'rows');
+                    if (distData.length > 0) console.log('[Annual] Sample row[8]:', distData[0][8], '| row[9]:', distData[0][9], '| row[10]:', distData[0][10]);
+                    generateAnnualReport();
+                })
+                .withFailureHandler(err => {
+                    showAlert('Gagal load data: ' + err.message, 'err');
+                    document.getElementById('annualReportTableContainer').innerHTML = '<div style="text-align:center; padding: 50px; color:red;">Gagal memuat data.</div>';
+                })
+                .getDistribusiData();
+        }
+        function closeAnnualReportModal() {
+            document.getElementById('annualReportModal').classList.remove('show');
+        }
+        function generateAnnualReport() {
+            const year = document.getElementById('annualReportYear').value;
+            document.getElementById('annualReportYearText').innerText = year;
+            const d = new Date();
+            const today = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+            document.getElementById('annualReportDateText').innerText = today;
+            const dropingRS = [
+                "ITD ZA", "MEURAXA", "RSIA", "RS Teuku Umar Calang",
+                "UDD Kota Langsa", "UDD Kab. Tangerang", "UDD Kab. Pidie",
+                "UDD Kab. Aceh Utara", "UDD. Kota Medan"
+            ];
+            const nonDropingRS = [
+                "RS. HARAPAN BUNDA", "RS. TEUKU FAKINAH", "RS. PERTAMEDIKA",
+                "RS. KESDAM IM", "RS. BHAYANGKARA", "RS. CEMPAKA AZ-ZAHRA",
+                "MEUTIA HOSPITAL", "RS. IBNU SINA", "RS. PENDIDIKAN USK",
+                "RS. KABUPATEN ACEH BESAR", "KLINIK KASEHAT WALAFIAT",
+                "NEW PUTRO PHANG", "KLINIK NADIRAH", "KLINIK BUNGONG SEULANGA",
+                "RS. JIWA ACEH", "RS. HERMINA", "RS. CEMPAKA LIMA",
+                "KLINIK UTAMA REZEKI MERASI", "RSU PUTRI BIDADARI"
+            ];
+            const allRS = [...dropingRS, ...nonDropingRS];
+            const rsMonthData = {};
+            allRS.forEach(rs => {
+                rsMonthData[rs] = {};
+                MONTHS.forEach(m => { rsMonthData[rs][m] = { Permintaan: 0, Pemenuhan: 0 }; });
+            });
+            const normalizeRS = (name) => String(name).toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const rsMap = {};
+            allRS.forEach(rs => rsMap[normalizeRS(rs)] = rs);
+            const filtered = distData.filter(r => {
+                const rowTahun = String(r[10]).trim();
+                return !year || rowTahun === String(year);
+            });
+            filtered.forEach(row => {
+                // row[3] = Nama RS (sama seperti laporan bulanan)
+                const rsRaw = String(row[3]).trim();
+                const rsKey = normalizeRS(rsRaw);
+                const rs = rsMap[rsKey];
+                if (!rs) return;
+                const rowBulan = String(row[9]).trim().toLowerCase();
+                const mIdx = MONTHS.findIndex(m => m.toLowerCase() === rowBulan);
+                if (mIdx < 0) return;
+                const tipe = String(row[8]).trim().toLowerCase() === 'permintaan' ? 'Permintaan' : 'Pemenuhan';
+                const qty = parseFloat(row[7]) || 0;
+                rsMonthData[rs][MONTHS[mIdx]][tipe] += qty;
+            });
+            const thS = (t, extra, headerBg) => `<th style="border:1px solid #000 !important; padding:2px 3px; background:${headerBg}; color:#000; font-family:'Trebuchet MS',sans-serif; font-weight:bold; font-size:9.5px; text-align:center; ${extra || ''}">${t}</th>`;
+            const tdN = (v, bg = '') => {
+                const val = typeof v === 'number' ? Math.round(v) : (parseInt(v) || 0);
+                return `<td style="border:1px solid #000 !important; text-align:center; padding:2px 3px; font-family:'Trebuchet MS',sans-serif; font-weight:bold; font-size:9.5px; ${bg ? 'background:' + bg + ';' : ''}">${val}</td>`;
+            };
+            const tdL = (v, bg = '') => `<td style="border:1px solid #000 !important; text-align:left; padding:2px 4px; font-family:'Trebuchet MS',sans-serif; font-weight:bold; font-size:9.5px; white-space:nowrap; overflow: hidden; text-overflow: ellipsis; ${bg ? 'background:' + bg + ';' : ''}">${v}</td>`;
+            const buildAnnualTable = (tipe, label, headerBg, rowBg, totalBg) => {
+                const th = (t, extra) => thS(t, extra, headerBg);
+                let t = `<table style="width: 95%; margin: 0 auto; border-collapse:collapse; border:1px solid #000 !important; table-layout: fixed;">
+<thead>
+<tr>
+${th('NAMA RS &amp; BDRS', 'text-align:left; width: 170px;')}
+${MONTHS.map((m, i) => th(i + 1, 'width: 28px;')).join('')}
+${th('Jml', 'width: 38px;')}
+</tr>
+<tr>
+<td colspan="${MONTHS.length + 2}" style="text-align:center; border:1px solid #000; font-family:'Trebuchet MS',sans-serif; font-weight:bold; font-size:10.5px; background:${headerBg}; padding:3px; text-transform: uppercase; letter-spacing: 1px;">${label}</td>
+</tr>
+</thead>
+<tbody>`;
+                let dropTotal = {}; MONTHS.forEach(m => dropTotal[m] = 0); let dropGrand = 0;
+                dropingRS.forEach(rs => {
+                    let rowTotal = 0;
+                    const cells = MONTHS.map(m => { const v = rsMonthData[rs][m][tipe]; rowTotal += v; dropTotal[m] += v; return tdN(v); }).join('');
+                    dropGrand += rowTotal;
+                    t += `<tr style="background:#fff;">${tdL(rs)}${cells}${tdN(rowTotal, rowBg)}</tr>`;
+                });
+                t += `<tr>${tdL('Total Droping', totalBg)}${MONTHS.map(m => tdN(dropTotal[m], totalBg)).join('')}${tdN(dropGrand, totalBg)}</tr>`;
+                let nonDropTotal = {}; MONTHS.forEach(m => nonDropTotal[m] = 0); let nonDropGrand = 0;
+                nonDropingRS.forEach(rs => {
+                    let rowTotal = 0;
+                    const cells = MONTHS.map(m => { const v = rsMonthData[rs][m][tipe]; rowTotal += v; nonDropTotal[m] += v; return tdN(v); }).join('');
+                    nonDropGrand += rowTotal;
+                    t += `<tr style="background:#fff;">${tdL(rs)}${cells}${tdN(rowTotal, rowBg)}</tr>`;
+                });
+                t += `<tr>${tdL('Total Non Droping', totalBg)}${MONTHS.map(m => tdN(nonDropTotal[m], totalBg)).join('')}${tdN(nonDropGrand, totalBg)}</tr>`;
+                const finalHeaderBg = tipe === 'Permintaan' ? '#ffe082' : '#a5d6a7';
+                t += `<tr>${tdL('Total Droping &amp; Non Droping', finalHeaderBg)}${MONTHS.map(m => tdN((dropTotal[m] || 0) + (nonDropTotal[m] || 0), finalHeaderBg)).join('')}${tdN(dropGrand + nonDropGrand, finalHeaderBg)}</tr>`;
+                t += `</tbody></table>`;
+                return t;
+            };
+
+            console.log('[Annual] distData length:', distData.length, '| year filter:', year, '| filtered:', filtered.length);
+            const html = `
+<div class="annual-report-section">
+${buildAnnualTable('Permintaan', 'Permintaan', '#fff2cc', '#fff9c4', '#ffe082')}
+</div>
+<div class="annual-page-break"></div>
+<div class="annual-report-section second-page">
+${buildAnnualTable('Pemenuhan', 'Pemenuhan', '#e2efda', '#e8f5e9', '#c6e0b4')}
+</div>`;
+
+            document.getElementById('annualReportTableContainer').innerHTML = html;
+        }
+        function printAnnualReportModal() {
+            const originalTitle = document.title;
+            document.title = "Laporan_Distribusi_Tahunan";
+            const style = document.createElement('style');
+            style.innerHTML = `
+@media print {
+    html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    body > *:not(#annualReportModal) { display: none !important; }
+    #annualReportModal { position: absolute !important; left: 0; top: 0; width: 100% !important; display: block !important; background: #fff !important; padding-top: 15mm !important; padding-bottom: 15mm !important; padding-left: 10mm !important; padding-right: 10mm !important; box-sizing: border-box !important; border: none !important; box-shadow: none !important; }
+    .report-box { box-shadow: none !important; border-radius: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: none !important; overflow: visible !important; border: none !important; margin: 0 !important; padding: 0 !important; background: #fff !important; box-sizing: border-box !important; }
+    .report-header { display: none !important; }
+    .report-body { padding: 0 !important; overflow: visible !important; height: auto !important; background: #fff !important; border: none !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; width: 100% !important; box-sizing: border-box !important; }
+    .annual-page-break { page-break-after: always !important; height: 0 !important; margin: 0 !important; }
+    .annual-report-section.second-page { padding-top: 10mm !important; page-break-before: always !important; }
+    .annual-report-section table, .annual-report-section th, .annual-report-section td { border: 1px solid #000 !important; border-collapse: collapse !important; }
+    .sig-container { font-size: 11px !important; margin-top: 25px !important; page-break-inside: avoid; padding: 0 40px !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; width: 100% !important; box-sizing: border-box !important; }
+    .sig-name { margin-top: 60px !important; }
+    #annualReportPrintArea > div:first-child { font-size: 16px !important; margin-top: 0 !important; margin-bottom: 15px !important; font-family: 'Trebuchet MS', sans-serif !important; font-weight: bold !important; display: block !important; text-align: center !important; color: #000 !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    @page { size: A4 landscape; margin: 0; }
+}
+`;
+
+            document.head.appendChild(style);
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                    if (document.head.contains(style)) document.head.removeChild(style);
+                }, 1000);
+            }, 100);
+        }
+    </script>
+
+</body>
+
+<!-- ==================== ANALYTICS DASHBOARD PANEL ==================== -->
+<style>
+    #analyticsDash {
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        background: linear-gradient(145deg, #f9e4e8 0%, #fdf0f3 35%, #e8f5e9 70%, #e3f2fd 100%);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    #analyticsDash.open {
+        display: flex;
+    }
+
+    #analyticsDash.visible {
+        opacity: 1;
+    }
+
+    #adBloodBg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+    }
+
+    .ad-drop {
+        position: absolute;
+        width: 18px;
+        height: 22px;
+        animation: adRise linear infinite;
+        opacity: 0;
+    }
+
+    .ad-drop svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    @keyframes adRise {
+        0% {
+            transform: translateY(110vh) scale(0.5);
+            opacity: 0;
+        }
+
+        10% {
+            opacity: 0.12;
+        }
+
+        90% {
+            opacity: 0.12;
+        }
+
+        100% {
+            transform: translateY(-15vh) scale(1.2);
+            opacity: 0;
+        }
+    }
+
+    @keyframes bloodPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 0px #fff);
+        }
+
+        50% {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 6px rgba(255, 200, 200, 0.9));
+        }
+    }
+
+    #dashBtnBlood {
+        animation: bloodPulse 1.8s ease-in-out infinite;
+    }
+
+    #adHeader {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 28px;
+        background: rgba(196, 30, 58, 0.92);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 20px rgba(196, 30, 58, 0.3);
+    }
+
+    #adHeader h2 {
+        color: #fff;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #adCloseBtn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: #fff;
+        border-radius: 8px;
+        padding: 7px 16px;
+        cursor: pointer;
+        font-family: 'Jost', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+
+    #adCloseBtn:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    #adFilters {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 12px 28px;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(196, 30, 58, 0.12);
+    }
+
+    .ad-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 155px;
+    }
+
+    .ad-filter-group label {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #C41E3A;
+    }
+
+    .ad-filter-group select {
+        padding: 7px 10px;
+        border: 1.5px solid rgba(196, 30, 58, 0.3);
+        border-radius: 8px;
+        font-family: 'Jost', sans-serif;
+        font-size: 13px;
+        background: #fff;
+        color: #0f2035;
+        cursor: pointer;
+        width: 100%;
+        transition: border-color 0.2s;
+    }
+
+    .ad-filter-group select:focus {
+        outline: none;
+        border-color: #C41E3A;
+    }
+
+    #adRefreshBtn {
+        margin-top: 18px;
+        padding: 8px 18px;
+        background: linear-gradient(135deg, #C41E3A, #8a0015);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: 'Jost', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 3px 12px rgba(196, 30, 58, 0.3);
+        transition: opacity 0.2s;
+    }
+
+    #adRefreshBtn:hover {
+        opacity: 0.85;
+    }
+
+    #adBody {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr 300px;
+        grid-template-rows: 1fr 1fr;
+        gap: 12px;
+        padding: 12px 28px 14px;
+        overflow: hidden;
+    }
+
+    .ad-card {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(8px);
+        border-radius: 14px;
+        padding: 12px 14px;
+        border: 1px solid rgba(196, 30, 58, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .ad-card-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f2035;
+        margin-bottom: 6px;
+        flex-shrink: 0;
+    }
+
+    .ad-card canvas {
+        flex: 1;
+        min-height: 0;
+    }
+
+    #adCardTrend {
+        grid-column: 1 / 3;
+        grid-row: 1;
+    }
+
+    #adCardKomp {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #adCardGol {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    #adCardRS {
+        grid-column: 3;
+        grid-row: 1 / 3;
+    }
+
+    #adRSList {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    #adRSList::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    #adRSList::-webkit-scrollbar-thumb {
+        background: rgba(196, 30, 58, 0.3);
+        border-radius: 4px;
+    }
+
+    .ad-rs-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 4px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        font-size: 12px;
+        color: #0f2035;
+    }
+
+    .ad-rs-rank {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: rgba(196, 30, 58, 0.1);
+        color: #C41E3A;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .ad-rs-name {
+        flex: 1;
+        font-weight: 500;
+        font-size: 11px;
+    }
+
+    .ad-rs-val {
+        font-weight: 700;
+        color: #C41E3A;
+        font-size: 13px;
+    }
+
+    .ad-loading {
+        text-align: center;
+        padding: 30px;
+        color: #999;
+        font-size: 13px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       ANALYTICS DASHBOARD — RESPONSIVE TABLET (≤1024px)
+       ══════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+        #adBody {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            padding: 12px 20px 14px;
+        }
+
+        #adCardTrend {
+            grid-column: 1 / 3;
+            grid-row: 1;
+        }
+
+        #adCardKomp {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        #adCardGol {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        #adCardRS {
+            grid-column: 1 / 3;
+            grid-row: 3;
+            max-height: 300px;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════
+       ANALYTICS DASHBOARD — PHONE (≤768px)
+       ══════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+
+        /* Header stacking */
+        #adHeader {
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            gap: 10px;
+        }
+
+        #adHeader h2 {
+            font-size: 16px;
+            gap: 8px;
+        }
+
+        #adHeader h2 svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        #adHeader > div {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        #adHeader > div button {
+            flex: 1;
+            text-align: center;
+            justify-content: center;
+        }
+
+        #adCloseBtn,
+        #adPrintBtn {
+            padding: 9px 12px !important;
+            font-size: 12px !important;
+        }
+
+        /* Filters stacking */
+        #adFilters {
+            flex-direction: column;
+            padding: 12px 14px;
+            gap: 10px;
+        }
+
+        .ad-filter-group {
+            min-width: 100%;
+            width: 100%;
+        }
+
+        .ad-filter-group select {
+            font-size: 15px;
+            padding: 10px 12px;
+            min-height: 42px;
+        }
+
+        #adRefreshBtn {
+            margin-top: 4px;
+            width: 100%;
+            padding: 10px 18px;
+            font-size: 14px;
+        }
+
+        /* Body grid → single column, scrollable */
+        #adBody {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+            gap: 12px;
+            padding: 12px 14px 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #adCardTrend {
+            grid-column: 1;
+            grid-row: auto;
+            min-height: 220px;
+        }
+
+        #adCardKomp {
+            grid-column: 1;
+            grid-row: auto;
+            min-height: 220px;
+        }
+
+        #adCardGol {
+            grid-column: 1;
+            grid-row: auto;
+            min-height: 220px;
+        }
+
+        #adCardRS {
+            grid-column: 1;
+            grid-row: auto;
+            max-height: 350px;
+        }
+
+        /* Cards */
+        .ad-card {
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .ad-card-title {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        /* RS list */
+        .ad-rs-row {
+            padding: 8px 4px;
+        }
+
+        .ad-rs-name {
+            font-size: 11px;
+        }
+
+        .ad-rs-val {
+            font-size: 12px;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════
+       ANALYTICS DASHBOARD — SMALL PHONE (≤480px)
+       ══════════════════════════════════════════════════ */
+    @media (max-width: 480px) {
+
+        #adHeader {
+            padding: 10px 10px;
+        }
+
+        #adHeader h2 {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        #adFilters {
+            padding: 10px;
+        }
+
+        .ad-filter-group label {
+            font-size: 8.5px;
+        }
+
+        #adBody {
+            padding: 10px 10px 16px;
+            gap: 10px;
+        }
+
+        #adCardTrend,
+        #adCardKomp,
+        #adCardGol {
+            min-height: 200px;
+        }
+
+        .ad-card {
+            padding: 10px;
+        }
+
+        .ad-card-title {
+            font-size: 12px;
+        }
+
+        .ad-rs-rank {
+            width: 20px;
+            height: 20px;
+            font-size: 9px;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════
+       ANALYTICS DASHBOARD — PHONE LANDSCAPE
+       ══════════════════════════════════════════════════ */
+    @media (max-height: 500px) and (orientation: landscape) {
+
+        /* Compact header */
+        #adHeader {
+            padding: 6px 16px;
+            flex-wrap: nowrap;
+        }
+
+        #adHeader h2 {
+            font-size: 16px;
+        }
+
+        #adCloseBtn,
+        #adPrintBtn {
+            padding: 5px 12px !important;
+            font-size: 11px !important;
+        }
+
+        /* Filters horizontal, compact */
+        #adFilters {
+            padding: 8px 16px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .ad-filter-group {
+            min-width: 130px;
+            flex: 1;
+        }
+
+        .ad-filter-group select {
+            padding: 6px 8px;
+            font-size: 12px;
+            min-height: 34px;
+        }
+
+        #adRefreshBtn {
+            margin-top: 14px;
+            padding: 6px 14px;
+            font-size: 12px;
+        }
+
+        /* 2x2 grid for landscape phones */
+        #adBody {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8px;
+            padding: 8px 16px 10px;
+            overflow-y: auto;
+        }
+
+        #adCardTrend {
+            grid-column: 1;
+            grid-row: 1;
+            min-height: 160px;
+        }
+
+        #adCardKomp {
+            grid-column: 2;
+            grid-row: 1;
+            min-height: 160px;
+        }
+
+        #adCardGol {
+            grid-column: 1;
+            grid-row: 2;
+            min-height: 160px;
+        }
+
+        #adCardRS {
+            grid-column: 2;
+            grid-row: 2;
+            max-height: none;
+        }
+
+        .ad-card {
+            padding: 8px 10px;
+        }
+
+        .ad-card-title {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════
+       ANALYTICS DASHBOARD — SAFE AREA INSETS
+       ══════════════════════════════════════════════════ */
+    @supports (padding: env(safe-area-inset-top)) {
+        #adHeader {
+            padding-top: max(6px, env(safe-area-inset-top));
+            padding-left: max(14px, env(safe-area-inset-left));
+            padding-right: max(14px, env(safe-area-inset-right));
+        }
+
+        #adFilters {
+            padding-left: max(14px, env(safe-area-inset-left));
+            padding-right: max(14px, env(safe-area-inset-right));
+        }
+
+        #adBody {
+            padding-left: max(14px, env(safe-area-inset-left));
+            padding-right: max(14px, env(safe-area-inset-right));
+            padding-bottom: max(14px, env(safe-area-inset-bottom));
+        }
+    }
+</style>
+
+<div id="analyticsDash">
+    <div id="adBloodBg"></div>
+    <div id="adHeader">
+        <h2>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z" />
+            </svg>
+            Dashboard Analitik Distribusi Darah
+        </h2>
+        <div style="display:flex; gap:10px;">
+            <button id="adPrintBtn" onclick="printAnalytics()"
+                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; border-radius: 8px; padding: 7px 16px; cursor: pointer; font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 600;">⎙
+                Print/PDF</button>
+            <button id="adCloseBtn" onclick="closeAnalyticsDashboard()">✕ Tutup</button>
+        </div>
+    </div>
+    <div id="adFilters">
+        <div class="ad-filter-group">
+            <label>Jenis Distribusi</label>
+            <select id="adFJenis" onchange="onAdJenisChange()">
+                <option value="">Semua</option>
+                <option value="Droping">Droping</option>
+                <option value="Non Droping">Non Droping</option>
+            </select>
+        </div>
+        <div class="ad-filter-group">
+            <label>Jenis Formulir</label>
+            <select id="adFFormulir" onchange="renderAnalytics()">
+                <option value="">Semua</option>
+                <option value="Permintaan">Permintaan</option>
+                <option value="Pemenuhan">Pemenuhan</option>
+            </select>
+        </div>
+        <div class="ad-filter-group" style="min-width:200px;">
+            <label>RS / Klinik</label>
+            <select id="adFRS" onchange="renderAnalytics()">
+                <option value="">Semua</option>
+            </select>
+        </div>
+        <div class="ad-filter-group">
+            <label>Bulan</label>
+            <select id="adFBulan" onchange="renderAnalytics()">
+                <option value="">Semua Bulan</option>
+            </select>
+        </div>
+        <button id="adRefreshBtn" onclick="loadAnalyticsData()">&#8635; Muat Ulang</button>
+    </div>
+    <div id="adBody">
+        <div class="ad-card" id="adCardTrend">
+            <div class="ad-card-title">&#128200; Trend Bulanan</div>
+            <canvas id="adChartTrend"></canvas>
+        </div>
+        <div class="ad-card" id="adCardKomp">
+            <div class="ad-card-title">&#129514; Distribusi Menurut Komponen</div>
+            <canvas id="adChartKomp"></canvas>
+        </div>
+        <div class="ad-card" id="adCardGol">
+            <div class="ad-card-title">&#129656; Golongan Darah &amp; Rhesus</div>
+            <canvas id="adChartGol"></canvas>
+        </div>
+        <div class="ad-card" id="adCardRS">
+            <div class="ad-card-title">&#127973; Ranking RS / Klinik</div>
+            <div id="adRSList">
+                <div class="ad-loading">Memuat data...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var adRawData = [];
+        var adChartTrend = null, adChartKomp = null, adChartGol = null;
+        var AD_MONTHS = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'];
+        var AD_MONTHS_LABEL = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        window.openAnalyticsDashboard = function () {
+            var dash = document.getElementById('analyticsDash');
+            dash.classList.add('open');
+            setTimeout(function () { dash.classList.add('visible'); }, 10);
+            initAdBloodBg();
+            if (!adRawData.length) loadAnalyticsData();
+        };
+
+        window.closeAnalyticsDashboard = function () {
+            var dash = document.getElementById('analyticsDash');
+            dash.classList.remove('visible');
+            setTimeout(function () { dash.classList.remove('open'); }, 400);
+        };
+
+        function initAdBloodBg() {
+            var bg = document.getElementById('adBloodBg');
+            if (bg.children.length > 0) return;
+            var colors = ['#C41E3A', '#8a0015', '#e05070', '#b03050'];
+            for (var i = 0; i < 18; i++) {
+                var div = document.createElement('div');
+                div.className = 'ad-drop';
+                div.style.left = (Math.random() * 100) + '%';
+                div.style.animationDuration = (8 + Math.random() * 12) + 's';
+                div.style.animationDelay = (-Math.random() * 15) + 's';
+                var c = colors[i % colors.length];
+                div.innerHTML = '<svg viewBox="0 0 24 24" fill="' + c + '" opacity="0.5"><path d="M12 2C9 6 4 11 4 15.5a8 8 0 0016 0C20 11 15 6 12 2z"/></svg>';
+                bg.appendChild(div);
+            }
+        }
+
+        window.loadAnalyticsData = function () {
+            document.getElementById('adRSList').innerHTML = '<div class="ad-loading">Memuat data...</div>';
+            google.script.run
+                .withSuccessHandler(function (r) {
+                    adRawData = r.data || [];
+                    populateAdFilters();
+                    renderAnalytics();
+                })
+                .withFailureHandler(function (err) {
+                    document.getElementById('adRSList').innerHTML = '<div class="ad-loading" style="color:red;">Gagal memuat: ' + err.message + '</div>';
+                })
+                .getDistribusiData();
+        };
+
+        window.onAdJenisChange = function () {
+            populateAdRS();
+            renderAnalytics();
+        };
+
+        function populateAdFilters() {
+            populateAdRS();
+
+            var bulanEl = document.getElementById('adFBulan');
+            var curBulan = bulanEl.value;
+            bulanEl.innerHTML = '<option value="">Semua Bulan</option>' + AD_MONTHS_LABEL.map(function (m, i) { return '<option value="' + AD_MONTHS[i] + '">' + m + '</option>'; }).join('');
+            if (curBulan) bulanEl.value = curBulan;
+        }
+
+        function populateAdRS() {
+            var fJenis = document.getElementById('adFJenis').value.toLowerCase();
+            var rsSet = new Set();
+            adRawData.forEach(function (r) {
+                if (!r[3]) return;
+                var rJenis = String(r[1] || '').toLowerCase();
+                if (!fJenis || rJenis === fJenis) {
+                    rsSet.add(String(r[3]).trim());
+                }
+            });
+            var rsEl = document.getElementById('adFRS');
+            var curRS = rsEl.value;
+            rsEl.innerHTML = '<option value="">Semua</option>' + Array.from(rsSet).sort().map(function (rs) { return '<option value="' + rs + '">' + rs + '</option>'; }).join('');
+            if (curRS && Array.from(rsSet).includes(curRS)) {
+                rsEl.value = curRS;
+            } else {
+                rsEl.value = "";
+            }
+        }
+
+        function getFilteredAdData() {
+            var fJenis = document.getElementById('adFJenis').value.toLowerCase();
+            var fFormulir = document.getElementById('adFFormulir').value.toLowerCase();
+            var fRS = document.getElementById('adFRS').value.toLowerCase();
+            var fBulan = document.getElementById('adFBulan').value.toLowerCase();
+            return adRawData.filter(function (r) {
+                if (fJenis && String(r[1] || '').toLowerCase() !== fJenis) return false;      // r[1] = Jenis Permintaan (Droping/Non Droping)
+                if (fFormulir && String(r[8] || '').trim().toLowerCase() !== fFormulir) return false; // r[8] = Jenis Pengimputan
+                if (fRS && String(r[3] || '').trim().toLowerCase() !== fRS) return false;    // r[3] = RS/Klinik
+                if (fBulan && String(r[9] || '').trim().toLowerCase() !== fBulan) return false; // r[9] = Bulan
+                return true;
+            });
+        }
+
+        window.renderAnalytics = function () {
+            var data = getFilteredAdData();
+            renderAdTrend(data);
+            renderAdKomp(data);
+            renderAdGol(data);
+            renderAdRS(data);
+        };
+
+        function renderAdTrend(data) {
+            var monthly = {};
+            AD_MONTHS.forEach(function (m) { monthly[m] = 0; });
+            data.forEach(function (r) {
+                var m = String(r[9] || '').trim().toLowerCase();
+                var qty = parseFloat(r[7]) || 0;
+                if (monthly.hasOwnProperty(m)) monthly[m] += qty;
+            });
+            var vals = AD_MONTHS.map(function (m) { return Math.round(monthly[m]); });
+            var ctx = document.getElementById('adChartTrend').getContext('2d');
+            if (adChartTrend) adChartTrend.destroy();
+            adChartTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: AD_MONTHS_LABEL,
+                    datasets: [{
+                        label: 'SUM of Jumlah', data: vals,
+                        borderColor: '#C41E3A', backgroundColor: 'rgba(196,30,58,0.08)',
+                        pointBackgroundColor: '#C41E3A', pointRadius: 5, pointHoverRadius: 7,
+                        tension: 0.4, fill: true, borderWidth: 2.5
+                    }, {
+                        label: 'Garis tren', data: vals,
+                        borderColor: 'rgba(196,30,58,0.35)', borderDash: [6, 4],
+                        pointRadius: 0, tension: 0.6, fill: false, borderWidth: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Jost', size: 11 } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { family: 'Jost', size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { ticks: { font: { family: 'Jost', size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderAdKomp(data) {
+            var komp = { WB: 0, PRC: 0, TC: 0, FFP: 0, FP: 0, AHF: 0, LP: 0 };
+            data.forEach(function (r) {
+                var k = String(r[4] || '').trim().toUpperCase();
+                var qty = parseFloat(r[7]) || 0;
+                if (komp.hasOwnProperty(k)) komp[k] += qty;
+            });
+            var labels = Object.keys(komp);
+            var vals = labels.map(function (k) { return Math.round(komp[k]); });
+            var ctx = document.getElementById('adChartKomp').getContext('2d');
+            if (adChartKomp) adChartKomp.destroy();
+            adChartKomp = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'Jumlah', data: vals, backgroundColor: ['#C41E3A', '#e05070', '#b03050', '#8a0015', '#f08090', '#d04060', '#c83060'], borderRadius: 6, borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, datalabels: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { family: 'Jost', size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { ticks: { font: { family: 'Jost', size: 11 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderAdGol(data) {
+            var gol = { A: 0, B: 0, AB: 0, O: 0 };
+            var rhPos = 0, rhNeg = 0;
+            data.forEach(function (r) {
+                var g = String(r[5] || '').trim().toUpperCase();
+                var rVal = String(r[6] || '').trim().toLowerCase();
+                var qty = parseFloat(r[7]) || 0;
+                if (gol.hasOwnProperty(g)) gol[g] += qty;
+                if (rVal === 'positif' || rVal === '+') rhPos += qty;
+                if (rVal === 'negatif' || rVal === '-') rhNeg += qty;
+            });
+            var ctx = document.getElementById('adChartGol').getContext('2d');
+            if (adChartGol) adChartGol.destroy();
+            adChartGol = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['A', 'B', 'AB', 'O', 'Positif', 'Negatif'],
+                    datasets: [{
+                        label: 'Golongan Darah',
+                        data: [Math.round(gol.A), Math.round(gol.B), Math.round(gol.AB), Math.round(gol.O), 0, 0],
+                        backgroundColor: ['#4caf50', '#4caf50', '#4caf50', '#4caf50', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)'],
+                        borderRadius: 5, borderWidth: 0
+                    }, {
+                        label: 'Rhesus',
+                        data: [0, 0, 0, 0, Math.round(rhPos), Math.round(rhNeg)],
+                        backgroundColor: ['rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)', '#C41E3A', '#1565C0'],
+                        borderRadius: 5, borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Jost', size: 10 } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { font: { family: 'Jost', size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { ticks: { font: { family: 'Jost', size: 11 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderAdRS(data) {
+            var rsCount = {};
+            data.forEach(function (r) {
+                var rs = String(r[3] || '').trim();
+                if (!rs) return;
+                var qty = parseFloat(r[7]) || 0;
+                rsCount[rs] = (rsCount[rs] || 0) + qty;
+            });
+            var sorted = Object.entries(rsCount).sort(function (a, b) { return b[1] - a[1]; });
+            var el = document.getElementById('adRSList');
+            if (!sorted.length) { el.innerHTML = '<div class="ad-loading">Tidak ada data.</div>'; return; }
+            el.innerHTML = sorted.map(function (item, i) {
+                return '<div class="ad-rs-row"><div class="ad-rs-rank">' + (i + 1) + '</div><div class="ad-rs-name">' + item[0] + '</div><div class="ad-rs-val">' + Math.round(item[1]).toLocaleString('id-ID') + '</div></div>';
+            }).join('');
+        }
+
+        window.printAnalytics = function () {
+            const originalTitle = document.title;
+            document.title = "Dashboard_Analitik_Distribusi";
+            const style = document.createElement('style');
+            style.innerHTML = `
+        @media print {
+            body > *:not(#analyticsDash) { display: none !important; }
+            #analyticsDash { 
+                position: relative !important; display: block !important; 
+                opacity: 1 !important; background: #fff !important; 
+                height: auto !important; overflow: visible !important;
+            }
+            #adBloodBg, #adFilters, #adCloseBtn, #adPrintBtn, #adRefreshBtn { display: none !important; }
+            #adHeader { background: #fff !important; color: #000 !important; box-shadow: none !important; border-bottom: 2px solid #C41E3A !important; }
+            #adHeader h2 { color: #000 !important; }
+            #adBody { 
+                display: block !important; padding: 0 !important; 
+                background: #fff !important; overflow: visible !important;
+            }
+            .ad-card { 
+                break-inside: avoid; border: 1px solid #ddd !important; 
+                background: #fff !important; margin-bottom: 20px !important;
+                box-shadow: none !important;
+            }
+            #adCardRS { margin-top: 20px !important; }
+            #adRSList { 
+                column-count: 2 !important; column-gap: 40px !important; 
+                overflow: visible !important; height: auto !important;
+            }
+            .ad-rs-row { break-inside: avoid; border-bottom: 1px solid #eee !important; }
+            .ad-card-title { font-size: 16px !important; color: #C41E3A !important; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+            @page { size: A4 portrait; margin: 15mm; }
+        }
+            `;
+            document.head.appendChild(style);
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                    if (document.head.contains(style)) document.head.removeChild(style);
+                }, 1000);
+            }, 100);
+        };
+    })();
+</script>
+
+</html>
